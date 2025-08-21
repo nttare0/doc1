@@ -51,14 +51,26 @@ export default function FolderPage() {
   // Fetch folder details
   const { data: folder, isLoading: folderLoading } = useQuery<Folder>({
     queryKey: ["/api/folders", folderId],
-    queryFn: getQueryFn(),
+    queryFn: async ({ queryKey }) => {
+      const res = await fetch(queryKey.join("/") as string, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return await res.json();
+    },
     enabled: !!folderId,
   });
 
   // Fetch folder documents
   const { data: documents = [], isLoading: documentsLoading, refetch: refetchDocuments } = useQuery<Document[]>({
     queryKey: ["/api/folders", folderId, "documents"],
-    queryFn: getQueryFn(),
+    queryFn: async ({ queryKey }) => {
+      const res = await fetch(queryKey.join("/") as string, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return await res.json();
+    },
     enabled: !!folderId && isAccessVerified,
   });
 
@@ -70,6 +82,95 @@ export default function FolderPage() {
       setIsAccessVerified(true);
     }
   }, [folder, isAccessVerified]);
+
+  // Document operation handlers
+  const handleViewDocument = (document: Document) => {
+    // Auto-download document for offline editing
+    const link = document.createElement('a');
+    link.href = `/api/documents/${document.id}/download`;
+    link.download = document.originalFilename;
+    link.click();
+    
+    toast({
+      title: "Document downloaded",
+      description: `${document.name} has been downloaded for offline editing.`,
+    });
+  };
+
+  const handleUpdateDocument = (document: Document) => {
+    // Create file input for updating document with same file ID
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.docx,.xlsx,.pptx,.pdf';
+    
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', document.category);
+      formData.append('description', document.description || '');
+
+      try {
+        const response = await fetch(`/api/documents/${document.id}/update`, {
+          method: 'PUT',
+          body: formData,
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          toast({
+            title: "Document updated",
+            description: `${document.name} has been updated successfully.`,
+          });
+          refetchDocuments();
+        } else {
+          throw new Error('Update failed');
+        }
+      } catch (error) {
+        toast({
+          title: "Update failed",
+          description: "Failed to update document. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    input.click();
+  };
+
+  const handleDownloadPDF = async (document: Document) => {
+    try {
+      // Download document as PDF only
+      const response = await fetch(`/api/documents/${document.id}/download/pdf`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${document.name}.pdf`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+        
+        toast({
+          title: "PDF downloaded",
+          description: `${document.name} PDF has been downloaded.`,
+        });
+      } else {
+        throw new Error('PDF download failed');
+      }
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "Failed to download PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Verify folder access mutation
   const verifyAccessMutation = useMutation({
@@ -128,22 +229,20 @@ export default function FolderPage() {
     },
   });
 
+  // Category configuration for document display
+  const categoryConfig = {
+    "press-releases": { label: "Press Release", color: "bg-blue-100 text-blue-800" },
+    "memos": { label: "Memo", color: "bg-green-100 text-green-800" },
+    "internal-letters": { label: "Internal Letter", color: "bg-purple-100 text-purple-800" },
+    "contracts": { label: "Contract", color: "bg-red-100 text-red-800" },
+    "follow-ups": { label: "Follow-up", color: "bg-orange-100 text-orange-800" },
+  };
+
   // Filter documents based on search
   const filteredDocuments = documents.filter(doc =>
     doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doc.originalName.toLowerCase().includes(searchQuery.toLowerCase())
+    (doc.description && doc.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
-
-  // Category colors and icons
-  const categoryConfig = {
-    press_releases: { color: "bg-blue-100 text-blue-800", label: "Press Release" },
-    memos: { color: "bg-green-100 text-green-800", label: "Memo" },
-    internal_letters: { color: "bg-yellow-100 text-yellow-800", label: "Internal Letter" },
-    external_letters: { color: "bg-purple-100 text-purple-800", label: "External Letter" },
-    contracts: { color: "bg-red-100 text-red-800", label: "Contract" },
-    follow_ups: { color: "bg-orange-100 text-orange-800", label: "Follow-up" },
-    reports: { color: "bg-gray-100 text-gray-800", label: "Report" },
-  };
 
   if (folderLoading) {
     return (
@@ -361,6 +460,33 @@ export default function FolderPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => handleViewDocument(document)}
+                            title="View & Download for Offline Edit"
+                            data-testid={`button-view-${document.id}`}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          {/* Update Button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUpdateDocument(document)}
+                            title="Update Document (Same File ID)"
+                            data-testid={`button-update-${document.id}`}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          {/* Download PDF Button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadPDF(document)}
+                            title="Download PDF Only"
+                            data-testid={`button-download-pdf-${document.id}`}
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        </div>
                             onClick={() => downloadDocumentMutation.mutate(document.id)}
                             disabled={downloadDocumentMutation.isPending}
                             title="View (Auto-download for offline editing)"

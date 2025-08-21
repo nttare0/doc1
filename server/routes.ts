@@ -219,6 +219,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update document (same file ID)
+  app.put("/api/documents/:id/update", requireAuth, upload.single('file'), async (req, res) => {
+    try {
+      const documentId = req.params.id;
+      const existingDocument = await storage.getDocument(documentId);
+      
+      if (!existingDocument) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const { category, description } = req.body;
+      
+      // Delete old file
+      try {
+        await fs.unlink(existingDocument.filePath);
+      } catch (error) {
+        console.warn('Could not delete old file:', error);
+      }
+
+      // Update document with new file
+      const updatedDocument = await storage.updateDocument(documentId, {
+        name: req.file.originalname.replace(/\.[^/.]+$/, ""), // Remove extension
+        originalName: req.file.originalname,
+        filePath: req.file.path,
+        fileSize: req.file.size,
+
+        fileType: path.extname(req.file.originalname).toLowerCase().substring(1),
+        category: category || existingDocument.category,
+        updatedAt: new Date(),
+      });
+
+      if (!updatedDocument) {
+        return res.status(500).json({ message: "Failed to update document" });
+      }
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user!.id,
+        action: "update",
+        resourceType: "document",
+        resourceId: documentId,
+        details: {
+          documentName: updatedDocument.name,
+          fileSize: req.file.size,
+          fileType: updatedDocument.fileType,
+          category: updatedDocument.category,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json(updatedDocument);
+    } catch (error: any) {
+      console.error('Document update error:', error);
+      res.status(500).json({ message: error.message || "Update failed" });
+    }
+  });
+
+  // Download document as PDF
+  app.get("/api/documents/:id/download/pdf", requireAuth, async (req, res) => {
+    try {
+      const document = await storage.getDocument(req.params.id);
+      
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // For now, if the document is already a PDF, serve it directly
+      // In a real implementation, you might convert other formats to PDF
+      if (document.fileType === 'pdf') {
+        // Log activity
+        await storage.createActivityLog({
+          userId: req.user!.id,
+          action: "download_pdf",
+          resourceType: "document",
+          resourceId: document.id,
+          details: { 
+            documentName: document.name,
+            fileSize: document.fileSize,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+        });
+        
+        res.download(document.filePath, `${document.name}.pdf`);
+      } else {
+        // For non-PDF files, return an informational response
+        res.status(400).json({ 
+          message: "PDF conversion not available for this file type. Please download the original file instead." 
+        });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Share document
   app.post("/api/documents/:id/share", requireAuth, async (req, res) => {
     try {
@@ -487,7 +587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/ai/improve-content", requireAuth, async (req, res) => {
     try {
-      const improvedContent = await grokService.improveContent(req.body);
+      const improvedContent = await grokService.improveContent(req.body.content, req.body.documentType);
 
       // Log activity
       await storage.createActivityLog({

@@ -144,6 +144,15 @@ export class GrokService {
 
     return prompt;
   }
+
+  // Alias methods for backward compatibility
+  async generateTemplate(request: TemplateRequest): Promise<string> {
+    return this.generateDocumentTemplate(request);
+  }
+
+  async improveContent(content: string, documentType: string = "document"): Promise<string> {
+    return this.improveDocumentContent(content, documentType);
+  }
 }
 
 export const grokService = new GrokService();

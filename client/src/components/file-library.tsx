@@ -10,7 +10,8 @@ import {
   Grid3X3,
   List,
   Clock,
-  Users
+  Users,
+  Plus
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,11 +26,19 @@ export function FileLibrary() {
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showFolderCreator, setShowFolderCreator] = useState(false);
 
   // Fetch all folders
   const { data: folders = [], isLoading } = useQuery<FolderType[]>({
     queryKey: ["/api/folders"],
-    queryFn: getQueryFn({ on404: "returnNull" }),
+    queryFn: async ({ queryKey }) => {
+      const res = await fetch(queryKey.join("/") as string, {
+        credentials: "include",
+      });
+      if (res.status === 401) return [];
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return await res.json();
+    },
   });
 
   // Filter folders based on search
@@ -73,7 +82,13 @@ export function FileLibrary() {
             Organize your documents in secure folders
           </p>
         </div>
-        <FolderCreator />
+        <Button
+          onClick={() => setShowFolderCreator(true)}
+          className="bg-zeolf-blue hover:bg-zeolf-blue-dark"
+          data-testid="button-create-folder-plus"
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
       </div>
 
       {/* Search and View Controls */}
@@ -210,6 +225,13 @@ export function FileLibrary() {
           <span>•</span>
           <span>{filteredFolders.filter(f => !f.hasSecurityCode).length} open access</span>
         </div>
+      )}
+
+      {/* Folder Creator Modal */}
+      {showFolderCreator && (
+        <FolderCreator 
+          onSuccess={() => setShowFolderCreator(false)}
+        />
       )}
     </div>
   );
