@@ -12,6 +12,7 @@ import DocumentViewer from "@/pages/document-viewer";
 import DocumentEditorPage from "@/pages/document-editor";
 import UserManagement from "@/pages/admin/user-management";
 import ActivityLogs from "@/pages/admin/activity-logs";
+import FolderPage from "@/pages/folder-page";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
       
       {/* Protected routes */}
       <ProtectedRoute path="/" component={Dashboard} />
+      <ProtectedRoute path="/folders/:folderId" component={FolderPage} />
       <ProtectedRoute path="/documents/:id" component={DocumentViewer} />
       <ProtectedRoute path="/document/edit/:id" component={DocumentEditorPage} />
       <ProtectedRoute path="/admin/users" component={UserManagement} />
