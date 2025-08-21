@@ -21,12 +21,12 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       
       {/* Protected routes */}
-      <ProtectedRoute path="/" component={Dashboard} />
-      <ProtectedRoute path="/folders/:folderId" component={FolderPage} />
-      <ProtectedRoute path="/documents/:id" component={DocumentViewer} />
-      <ProtectedRoute path="/document/edit/:id" component={DocumentEditorPage} />
-      <ProtectedRoute path="/admin/users" component={UserManagement} />
-      <ProtectedRoute path="/admin/activity" component={ActivityLogs} />
+      <ProtectedRoute path="/" component={() => <Dashboard />} />
+      <ProtectedRoute path="/folders/:folderId" component={() => <FolderPage />} />
+      <ProtectedRoute path="/documents/:id" component={() => <DocumentViewer />} />
+      <ProtectedRoute path="/document/edit/:id" component={() => <DocumentEditorPage />} />
+      <ProtectedRoute path="/admin/users" component={() => <UserManagement />} />
+      <ProtectedRoute path="/admin/activity" component={() => <ActivityLogs />} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
