@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -217,27 +218,27 @@ export function FolderCreator({ isOpen, onClose, onSuccess }: FolderCreatorProps
                 )}
               />
             )}
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDialogOpen(false)}
-                data-testid="button-cancel-folder"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createFolderMutation.isPending}
-                data-testid="button-submit-folder"
-                className="bg-zeolf-primary hover:bg-zeolf-primary-dark"
-              >
-                {createFolderMutation.isPending ? "Creating..." : "Create Folder"}
-              </Button>
-            </div>
           </form>
         </Form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setDialogOpen(false)}
+            data-testid="button-cancel-folder"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={form.handleSubmit((data) => createFolderMutation.mutate(data))}
+            disabled={createFolderMutation.isPending}
+            data-testid="button-save-folder"
+            className="bg-zeolf-primary hover:bg-zeolf-primary-dark"
+          >
+            {createFolderMutation.isPending ? "Creating..." : "Save Folder"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
