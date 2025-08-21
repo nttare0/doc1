@@ -27,7 +27,10 @@ import {
   Users,
   BarChart3,
   MoreHorizontal,
-  Settings
+  Settings,
+  Download,
+  Eye,
+  Edit
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Document } from "@shared/schema";
@@ -35,6 +38,7 @@ import { DocumentCard } from "@/components/document-card";
 import { UploadModal } from "@/components/upload-modal";
 import { VideoConference } from "@/components/video-conference";
 import { DocumentCreator } from "@/components/document-creator";
+import { FileViewer } from "@/components/file-viewer";
 
 const categoryIcons = {
   press_releases: { icon: Newspaper, color: "text-zeolf-accent", bgColor: "bg-zeolf-accent/10" },
@@ -62,6 +66,8 @@ export default function Dashboard() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showVideoConference, setShowVideoConference] = useState(false);
   const [showDocumentCreator, setShowDocumentCreator] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [showFileViewer, setShowFileViewer] = useState(false);
 
   // Fetch documents
   const { data: documents = [], isLoading: documentsLoading } = useQuery<Document[]>({
@@ -174,6 +180,16 @@ export default function Dashboard() {
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Upload File
+              </Button>
+              
+              <Button 
+                onClick={() => setShowFileViewer(true)}
+                variant="outline"
+                className="w-full border-zeolf-accent text-zeolf-accent hover:bg-zeolf-accent/5"
+                data-testid="button-file-library"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                File Library
               </Button>
             </div>
             
@@ -358,6 +374,15 @@ export default function Dashboard() {
         open={showDocumentCreator}
         onClose={() => setShowDocumentCreator(false)}
       />
+
+      {/* File Viewer Modal */}
+      {showFileViewer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-6xl max-h-[90vh] overflow-hidden">
+            <FileViewer onClose={() => setShowFileViewer(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
