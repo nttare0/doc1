@@ -128,8 +128,12 @@ export default function Dashboard() {
                 className="w-full justify-start"
                 data-testid="nav-all-documents"
               >
-                <Folder className="w-4 h-4 mr-3" />
+                <FileText className="w-4 h-4 mr-3" />
                 All Documents
+              </Button>
+              <Button variant="ghost" className="w-full justify-start" data-testid="nav-folders">
+                <Folder className="w-4 h-4 mr-3" />
+                Folders
               </Button>
               <Button variant="ghost" className="w-full justify-start" data-testid="nav-starred">
                 <Star className="w-4 h-4 mr-3" />
