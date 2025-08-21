@@ -39,11 +39,23 @@ const createFolderSchema = z.object({
 type CreateFolderData = z.infer<typeof createFolderSchema>;
 
 interface FolderCreatorProps {
+  isOpen?: boolean;
+  onClose?: () => void;
   onSuccess?: () => void;
 }
 
-export function FolderCreator({ onSuccess }: FolderCreatorProps) {
+export function FolderCreator({ isOpen, onClose, onSuccess }: FolderCreatorProps) {
   const [open, setOpen] = useState(false);
+  
+  // Use external control when provided, otherwise use internal state
+  const dialogOpen = isOpen !== undefined ? isOpen : open;
+  const setDialogOpen = (newOpen: boolean) => {
+    if (isOpen !== undefined) {
+      if (!newOpen) onClose?.();
+    } else {
+      setOpen(newOpen);
+    }
+  };
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -75,7 +87,7 @@ export function FolderCreator({ onSuccess }: FolderCreatorProps) {
         description: "Your new folder has been created successfully.",
       });
       form.reset();
-      setOpen(false);
+      setDialogOpen(false);
       onSuccess?.();
     },
     onError: (error: any) => {
@@ -90,17 +102,20 @@ export function FolderCreator({ onSuccess }: FolderCreatorProps) {
   const watchHasSecurityCode = form.watch("hasSecurityCode");
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button 
-          size="sm" 
-          className="bg-zeolf-primary hover:bg-zeolf-primary-dark text-white"
-          data-testid="button-create-folder"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Folder
-        </Button>
-      </DialogTrigger>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Only show trigger when not controlled externally */}
+      {isOpen === undefined && (
+        <DialogTrigger asChild>
+          <Button 
+            size="sm" 
+            className="bg-zeolf-primary hover:bg-zeolf-primary-dark text-white"
+            data-testid="button-create-folder"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Folder
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

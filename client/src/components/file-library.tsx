@@ -228,11 +228,11 @@ export function FileLibrary() {
       )}
 
       {/* Folder Creator Modal */}
-      {showFolderCreator && (
-        <FolderCreator 
-          onSuccess={() => setShowFolderCreator(false)}
-        />
-      )}
+      <FolderCreator 
+        isOpen={showFolderCreator}
+        onClose={() => setShowFolderCreator(false)}
+        onSuccess={() => setShowFolderCreator(false)}
+      />
     </div>
   );
 }
