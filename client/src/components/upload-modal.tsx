@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -188,6 +189,9 @@ export function UploadModal({ open, onOpenChange }: UploadModalProps) {
               <X className="w-4 h-4" />
             </Button>
           </DialogTitle>
+          <DialogDescription>
+            Upload a file to add it to your document collection. Supported formats: PDF, Word, Excel, PowerPoint.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -283,7 +287,7 @@ export function UploadModal({ open, onOpenChange }: UploadModalProps) {
               <Checkbox
                 id="autoHeader"
                 checked={addHeader}
-                onCheckedChange={setAddHeader}
+                onCheckedChange={(checked) => setAddHeader(checked === true)}
                 data-testid="checkbox-auto-header"
               />
               <Label htmlFor="autoHeader" className="text-sm text-zeolf-text">
