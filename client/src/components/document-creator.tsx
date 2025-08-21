@@ -339,6 +339,7 @@ export function DocumentCreator({ open, onClose, folderId, onDocumentCreated, on
                 variant="outline"
                 onClick={() => setShowFolderCreator(true)}
                 disabled={createDocumentMutation.isPending}
+                className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
                 data-testid="button-new-folder"
               >
                 <FolderPlus className="w-4 h-4 mr-2" />
