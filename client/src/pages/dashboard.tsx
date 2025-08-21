@@ -33,10 +33,6 @@ import {
   Edit
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { Document } from "@shared/schema";
-import { DocumentCard } from "@/components/document-card";
-import { UploadModal } from "@/components/upload-modal";
-import { VideoConference } from "@/components/video-conference";
 import { FileLibrary } from "@/components/file-library";
 
 const categoryIcons = {
@@ -58,32 +54,11 @@ const categoryLabels = {
 export default function Dashboard() {
   const { user, logoutMutation } = useAuth();
   const [location, setLocation] = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState("modified");
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showVideoConference, setShowVideoConference] = useState(false);
 
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const [showFileViewer, setShowFileViewer] = useState(false);
 
-  // Fetch documents
-  const { data: documents = [], isLoading: documentsLoading } = useQuery<Document[]>({
-    queryKey: ["/api/documents", { category: selectedCategory, search: searchQuery }],
-    enabled: !!user,
-  });
 
-  // Fetch document statistics
-  const { data: stats } = useQuery({
-    queryKey: ["/api/documents/stats"],
-    enabled: !!user,
-  });
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Search is handled by the query key change
-  };
+
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -112,28 +87,9 @@ export default function Dashboard() {
           </div>
           
           <div className="flex items-center space-x-4">
-            {/* Search */}
-            <form onSubmit={handleSearch} className="relative">
-              <Input
-                type="text"
-                placeholder="Search documents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-64 focus:ring-zeolf-blue"
-                data-testid="input-search"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            </form>
+
             
-            {/* Video Conference Button */}
-            <Button 
-              onClick={() => setShowVideoConference(true)}
-              className="bg-zeolf-accent hover:bg-zeolf-accent/90 text-white"
-              data-testid="button-new-meeting"
-            >
-              <Video className="w-4 h-4 mr-2" />
-              New Meeting
-            </Button>
+
             
             {/* User Menu */}
             <div className="flex items-center space-x-2">
@@ -162,42 +118,14 @@ export default function Dashboard() {
           <div className="p-6">
             {/* Quick Actions */}
             <div className="mb-6 space-y-3">
-              <Button 
-                onClick={() => setShowDocumentCreator(true)}
-                className="w-full bg-zeolf-blue hover:bg-zeolf-blue-dark text-white"
-                data-testid="button-create-document"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Create Document
-              </Button>
-              
-              <Button 
-                onClick={() => setShowUploadModal(true)}
-                variant="outline"
-                className="w-full border-zeolf-blue text-zeolf-blue hover:bg-zeolf-blue/5"
-                data-testid="button-upload"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload File
-              </Button>
-              
-              <Button 
-                onClick={() => setShowFileViewer(true)}
-                variant="outline"
-                className="w-full border-zeolf-accent text-zeolf-accent hover:bg-zeolf-accent/5"
-                data-testid="button-file-library"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                File Library
-              </Button>
+
             </div>
             
             {/* Navigation Menu */}
             <nav className="space-y-2 mb-8">
               <Button
-                variant={selectedCategory === "" ? "secondary" : "ghost"}
+                variant="secondary"
                 className="w-full justify-start"
-                onClick={() => setSelectedCategory("")}
                 data-testid="nav-all-documents"
               >
                 <Folder className="w-4 h-4 mr-3" />
@@ -226,20 +154,17 @@ export default function Dashboard() {
                 {Object.entries(categoryIcons).map(([category, { icon: Icon, color, bgColor }]) => (
                   <Button
                     key={category}
-                    variant={selectedCategory === category ? "secondary" : "ghost"}
+                    variant="ghost"
                     className="w-full justify-between text-sm p-3"
-                    onClick={() => setSelectedCategory(selectedCategory === category ? "" : category)}
                     data-testid={`nav-category-${category}`}
                   >
                     <div className="flex items-center space-x-3">
                       <Icon className={`w-4 h-4 ${color}`} />
                       <span>{categoryLabels[category as keyof typeof categoryLabels]}</span>
                     </div>
-                    {stats && (
-                      <span className="text-xs text-zeolf-text-secondary">
-                        {(stats as any)[category] || 0}
-                      </span>
-                    )}
+                    <span className="text-xs text-zeolf-text-secondary">
+                      0
+                    </span>
                   </Button>
                 ))}
               </nav>
@@ -271,48 +196,7 @@ export default function Dashboard() {
         {/* Main Content */}
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto">
-            {/* View Controls */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-4">
-                <h2 className="text-xl font-semibold text-zeolf-text">Company Documents</h2>
-                <span className="text-sm text-zeolf-text-secondary">
-                  {documents.length} documents
-                </span>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
-                  <Button
-                    variant={viewMode === "grid" ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("grid")}
-                    data-testid="button-grid-view"
-                  >
-                    <Grid3X3 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    data-testid="button-list-view"
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                </div>
-                
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-40" data-testid="select-sort">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="modified">Sort by: Modified</SelectItem>
-                    <SelectItem value="name">Sort by: Name</SelectItem>
-                    <SelectItem value="size">Sort by: Size</SelectItem>
-                    <SelectItem value="type">Sort by: Type</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+
             
             {/* File Library - Folder-based Document Management */}
             <FileLibrary />
@@ -320,27 +204,11 @@ export default function Dashboard() {
         </main>
       </div>
 
-      {/* Modals */}
-      <UploadModal 
-        open={showUploadModal} 
-        onOpenChange={setShowUploadModal}
-      />
-      
-      <VideoConference 
-        open={showVideoConference}
-        onOpenChange={setShowVideoConference}
-      />
+
       
 
 
-      {/* File Viewer Modal */}
-      {showFileViewer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-6xl max-h-[90vh] overflow-hidden">
-            <FileViewer onClose={() => setShowFileViewer(false)} />
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
