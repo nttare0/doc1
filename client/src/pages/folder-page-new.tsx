@@ -6,7 +6,9 @@ import {
   Plus,
   Lock,
   Unlock,
-  Bot
+  Bot,
+  FileText,
+  Settings
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -230,6 +232,8 @@ export default function FolderPage() {
       <GrokAssistant
         open={showGrokAssistant}
         onClose={() => setShowGrokAssistant(false)}
+        documentType=""
+        currentContent=""
       />
     </div>
   );

@@ -480,6 +480,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual folder details
+  app.get("/api/folders/:id", requireAuth, async (req, res) => {
+    try {
+      const folder = await storage.getFolder(req.params.id);
+      if (!folder) {
+        return res.status(404).json({ message: "Folder not found" });
+      }
+      res.json(folder);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/folders/:id", requireAuth, async (req, res) => {
     try {
       const folder = await storage.getFolder(req.params.id);

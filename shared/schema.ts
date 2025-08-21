@@ -122,10 +122,17 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).pick({
 
 // Types
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Folder = typeof folders.$inferSelect;
-export type InsertFolder = z.infer<typeof insertFolderSchema>;
 export type Document = typeof documents.$inferSelect;
+export type DocumentShare = typeof documentShares.$inferSelect;
+export type ActivityLog = typeof activityLogs.$inferSelect;
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertFolder = z.infer<typeof insertFolderSchema>;
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type InsertDocumentShare = z.infer<typeof insertDocumentShareSchema>;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type CreateDocument = z.infer<typeof createDocumentSchema>;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type DocumentShare = typeof documentShares.$inferSelect;
 export type InsertDocumentShare = z.infer<typeof insertDocumentShareSchema>;

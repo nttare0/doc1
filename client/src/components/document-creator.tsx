@@ -20,6 +20,7 @@ interface DocumentCreatorProps {
   onClose?: () => void;
   folderId?: string;
   onDocumentCreated?: () => void;
+  onSuccess?: () => void;
 }
 
 const documentTypeOptions = [
@@ -38,7 +39,7 @@ const fileTypeIcons = {
   powerpoint: Presentation,
 };
 
-export function DocumentCreator({ open, onClose, folderId, onDocumentCreated }: DocumentCreatorProps) {
+export function DocumentCreator({ open, onClose, folderId, onDocumentCreated, onSuccess }: DocumentCreatorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -79,6 +80,7 @@ export function DocumentCreator({ open, onClose, folderId, onDocumentCreated }: 
       }
       form.reset();
       onDocumentCreated?.();
+      onSuccess?.();
       // Redirect to document editor
       window.location.href = `/document/edit/${document.id}`;
     },

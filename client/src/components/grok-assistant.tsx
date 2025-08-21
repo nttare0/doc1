@@ -26,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 interface GrokAssistantProps {
+  open?: boolean;
+  onClose?: () => void;
   onTemplateGenerated?: (template: string) => void;
   onResearchCompleted?: (research: string) => void;
   documentType?: string;
@@ -33,14 +35,19 @@ interface GrokAssistantProps {
 }
 
 export function GrokAssistant({ 
+  open,
+  onClose,
   onTemplateGenerated, 
   onResearchCompleted,
   documentType = "",
   currentContent = ""
 }: GrokAssistantProps) {
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("template");
   const { toast } = useToast();
+
+  const dialogOpen = open !== undefined ? open : isOpen;
+  const handleOpenChange = onClose || ((open: boolean) => setIsOpen(open));
 
   // Template Generation
   const [templateForm, setTemplateForm] = useState({
@@ -125,7 +132,7 @@ export function GrokAssistant({
   });
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button 
           variant="outline" 

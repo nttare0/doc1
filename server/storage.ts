@@ -34,6 +34,7 @@ export interface IStorage {
   updateDocument(id: string, updates: Partial<Document>): Promise<Document | undefined>;
   deleteDocument(id: string): Promise<boolean>;
   getDocumentCount(documentType: string): Promise<number>;
+  getDocumentCountByTypeAndYear(documentType: string, year: number): Promise<number>;
   updateDocumentContent(id: string, content: any): Promise<Document | undefined>;
   generatePDF(document: Document): Promise<Buffer>;
   
@@ -316,6 +317,25 @@ export class DatabaseStorage implements IStorage {
       .select({ count: count() })
       .from(documents)
       .where(eq(documents.category, documentType));
+    return Number(result.count) || 0;
+  }
+
+  async getDocumentCountByTypeAndYear(documentType: string, year: number): Promise<number> {
+    const yearStart = new Date(year, 0, 1);
+    const yearEnd = new Date(year + 1, 0, 1);
+    
+    const [result] = await db
+      .select({ count: count() })
+      .from(documents)
+      .where(
+        and(
+          eq(documents.category, documentType),
+          and(
+            db.sql`${documents.createdAt} >= ${yearStart}`,
+            db.sql`${documents.createdAt} < ${yearEnd}`
+          )
+        )
+      );
     return Number(result.count) || 0;
   }
 
