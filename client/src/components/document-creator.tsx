@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { FileText, FileSpreadsheet, Presentation, Loader2 } from "lucide-react";
+import { FileText, FileSpreadsheet, Presentation, Loader2, FolderPlus } from "lucide-react";
+import { FolderCreator } from "./folder-creator";
 
 interface DocumentCreatorProps {
   open?: boolean;
@@ -41,6 +42,7 @@ const fileTypeIcons = {
 
 export function DocumentCreator({ open, onClose, folderId, onDocumentCreated, onSuccess }: DocumentCreatorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showFolderCreator, setShowFolderCreator] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showRecipientFields, setShowRecipientFields] = useState(false);
@@ -331,26 +333,38 @@ export function DocumentCreator({ open, onClose, folderId, onDocumentCreated, on
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex justify-between pt-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => handleOpenChange(false)}
+                onClick={() => setShowFolderCreator(true)}
                 disabled={createDocumentMutation.isPending}
-                data-testid="button-cancel"
+                data-testid="button-new-folder"
               >
-                Cancel
+                <FolderPlus className="w-4 h-4 mr-2" />
+                New Folder
               </Button>
-              <Button
-                type="submit"
-                disabled={createDocumentMutation.isPending}
-                data-testid="button-create-document"
-              >
-                {createDocumentMutation.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Create Document
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleOpenChange(false)}
+                  disabled={createDocumentMutation.isPending}
+                  data-testid="button-cancel"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createDocumentMutation.isPending}
+                  data-testid="button-create-document"
+                >
+                  {createDocumentMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Create Document
+                </Button>
+              </div>
             </div>
           </form>
         </Form>
@@ -358,5 +372,24 @@ export function DocumentCreator({ open, onClose, folderId, onDocumentCreated, on
     </Dialog>
   );
 
-  return <DialogComponent />;
+  const handleFolderCreated = () => {
+    setShowFolderCreator(false);
+    // Refresh the page or update folder list
+    queryClient.invalidateQueries({ queryKey: ["/api/folders"] });
+    toast({
+      title: "Folder created",
+      description: "New folder has been created successfully.",
+    });
+  };
+
+  return (
+    <>
+      <DialogComponent />
+      <FolderCreator
+        isOpen={showFolderCreator}
+        onClose={() => setShowFolderCreator(false)}
+        onSuccess={handleFolderCreated}
+      />
+    </>
+  );
 }
