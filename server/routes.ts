@@ -103,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileType,
         fileSize: req.file.size,
         filePath: req.file.path,
-        uploadedBy: req.user.id,
+        uploadedBy: req.user!.id,
         metadata: {
           mimetype: req.file.mimetype,
           uploadedAt: new Date().toISOString(),
@@ -112,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       await storage.createActivityLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: "upload",
         resourceType: "document",
         resourceId: document.id,
@@ -149,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log activity
       await storage.createActivityLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: "view",
         resourceType: "document",
         details: { category, search },
@@ -174,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log activity
       await storage.createActivityLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: "view",
         resourceType: "document",
         resourceId: document.id,
@@ -200,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log activity
       await storage.createActivityLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: "download",
         resourceType: "document",
         resourceId: document.id,
@@ -231,14 +231,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const share = await storage.shareDocument({
         documentId,
-        sharedBy: req.user.id,
+        sharedBy: req.user!.id,
         sharedWith,
         permission: permission || 'view',
       });
       
       // Log activity
       await storage.createActivityLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: "share",
         resourceType: "document",
         resourceId: documentId,
@@ -260,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get shared documents
   app.get("/api/documents/shared/with-me", requireAuth, async (req, res) => {
     try {
-      const documents = await storage.getUserSharedDocuments(req.user.id);
+      const documents = await storage.getUserSharedDocuments(req.user!.id);
       res.json(documents);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -302,7 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log activity
       await storage.createActivityLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: "update_user",
         resourceType: "user",
         resourceId: user.id,
@@ -332,8 +332,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/activity-logs", requireAuth, async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-      const logs = await storage.getUserActivityLogs(req.user.id, limit);
+      const logs = await storage.getUserActivityLogs(req.user!.id, limit);
       res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Create document from template
+  app.post("/api/documents/create", requireAuth, async (req, res) => {
+    try {
+      const { documentType, title, fileType, recipientName, recipientAddress, recipientTitle, isInternal } = req.body;
+      
+      // Generate document code
+      const year = new Date().getFullYear();
+      const typeCode = documentType.toUpperCase().replace('_', '-');
+      const count = await storage.getDocumentCount(documentType) + 1;
+      const documentCode = `${typeCode}-${year}-${count.toString().padStart(3, '0')}`;
+      
+      // Create initial content based on file type
+      let initialContent = {};
+      switch (fileType) {
+        case 'word':
+          initialContent = {
+            title: title,
+            body: `This ${documentType.replace('_', ' ')} document was created on ${new Date().toLocaleDateString()}.`
+          };
+          break;
+        case 'excel':
+          initialContent = {
+            cells: {
+              'cell_0': 'Document Title',
+              'cell_1': title,
+              'cell_4': 'Created Date',
+              'cell_5': new Date().toLocaleDateString(),
+              'cell_8': 'Document Code',
+              'cell_9': documentCode
+            }
+          };
+          break;
+        case 'powerpoint':
+          initialContent = {
+            slides: [
+              {
+                title: title,
+                content: `${documentType.replace('_', ' ').toUpperCase()}\n\nCreated: ${new Date().toLocaleDateString()}\nCode: ${documentCode}`
+              }
+            ]
+          };
+          break;
+      }
+      
+      // Prepare recipient info if it's a letter
+      let recipientInfo = null;
+      if ((documentType === 'internal_letter' || documentType === 'external_letter') && recipientName) {
+        recipientInfo = {
+          name: recipientName,
+          address: recipientAddress,
+          title: recipientTitle,
+          isInternal: isInternal
+        };
+      }
+      
+      const document = await storage.createDocument({
+        name: title,
+        originalName: title,
+        category: documentType,
+        fileType: fileType,
+        fileSize: 0, // Template documents start with 0 size
+        filePath: `templates/${documentCode}`, // Virtual path for templates
+        uploadedBy: req.user!.id,
+        documentCode: documentCode,
+        isTemplate: false,
+        content: initialContent,
+        recipientInfo: recipientInfo,
+        metadata: {
+          createdViaTemplate: true,
+          documentType: documentType
+        }
+      });
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user!.id,
+        action: "create_document",
+        resourceType: "document",
+        resourceId: document.id,
+        details: { documentType, fileType, documentCode },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.status(201).json(document);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update document content
+  app.put("/api/documents/:id/content", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { content } = req.body;
+      
+      const document = await storage.updateDocumentContent(id, content);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user!.id,
+        action: "edit_document",
+        resourceType: "document",
+        resourceId: id,
+        details: { contentUpdated: true },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.json(document);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Export document to PDF
+  app.post("/api/documents/:id/export-pdf", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const document = await storage.getDocument(id);
+      
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Generate PDF content based on document type and content
+      const pdfContent = await storage.generatePDF(document);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user!.id,
+        action: "export_pdf",
+        resourceType: "document",
+        resourceId: id,
+        details: { exportFormat: 'pdf' },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${document.name}.pdf"`);
+      res.send(pdfContent);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

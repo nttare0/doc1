@@ -22,6 +22,9 @@ export interface IStorage {
   searchDocuments(query: string): Promise<Document[]>;
   updateDocument(id: string, updates: Partial<Document>): Promise<Document | undefined>;
   deleteDocument(id: string): Promise<boolean>;
+  getDocumentCount(documentType: string): Promise<number>;
+  updateDocumentContent(id: string, content: any): Promise<Document | undefined>;
+  generatePDF(document: Document): Promise<Buffer>;
   
   // Document sharing
   shareDocument(share: InsertDocumentShare): Promise<DocumentShare>;
@@ -241,6 +244,50 @@ export class DatabaseStorage implements IStorage {
       followups: Number(stats.followups) || 0,
       total: Number(stats.total) || 0,
     };
+  }
+
+  async getDocumentCount(documentType: string): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(documents)
+      .where(eq(documents.category, documentType));
+    return Number(result.count) || 0;
+  }
+
+  async updateDocumentContent(id: string, content: any): Promise<Document | undefined> {
+    const [document] = await db
+      .update(documents)
+      .set({ 
+        content,
+        updatedAt: new Date() 
+      })
+      .where(eq(documents.id, id))
+      .returning();
+    return document || undefined;
+  }
+
+  async generatePDF(document: Document): Promise<Buffer> {
+    // Simple PDF generation - in a real application, you'd use a proper PDF library
+    const pdfContent = `
+ZEOLF TECHNOLOGY
+Document Management System
+
+${document.name}
+Document Code: ${document.documentCode || 'N/A'}
+Category: ${document.category.replace('_', ' ').toUpperCase()}
+Created: ${document.createdAt.toLocaleDateString()}
+
+Content:
+${JSON.stringify(document.content, null, 2)}
+
+---
+ZEOLF Technology - ${document.category.replace('_', ' ').toUpperCase()}
+Document Code: ${document.documentCode}
+Generated: ${new Date().toLocaleDateString()}
+    `;
+    
+    // Return as buffer for now - in production, use a proper PDF library like PDFKit or Puppeteer
+    return Buffer.from(pdfContent, 'utf-8');
   }
 }
 

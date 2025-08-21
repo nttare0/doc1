@@ -34,6 +34,7 @@ import { Document } from "@shared/schema";
 import { DocumentCard } from "@/components/document-card";
 import { UploadModal } from "@/components/upload-modal";
 import { VideoConference } from "@/components/video-conference";
+import { DocumentCreator } from "@/components/document-creator";
 
 const categoryIcons = {
   press_releases: { icon: Newspaper, color: "text-zeolf-accent", bgColor: "bg-zeolf-accent/10" },
@@ -60,6 +61,7 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState("modified");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showVideoConference, setShowVideoConference] = useState(false);
+  const [showDocumentCreator, setShowDocumentCreator] = useState(false);
 
   // Fetch documents
   const { data: documents = [], isLoading: documentsLoading } = useQuery<Document[]>({
@@ -154,14 +156,24 @@ export default function Dashboard() {
         <aside className="w-72 bg-white border-r border-gray-200 min-h-screen">
           <div className="p-6">
             {/* Quick Actions */}
-            <div className="mb-6">
+            <div className="mb-6 space-y-3">
+              <Button 
+                onClick={() => setShowDocumentCreator(true)}
+                className="w-full bg-zeolf-blue hover:bg-zeolf-blue-dark text-white"
+                data-testid="button-create-document"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Create Document
+              </Button>
+              
               <Button 
                 onClick={() => setShowUploadModal(true)}
-                className="w-full bg-zeolf-blue hover:bg-zeolf-blue-dark text-white"
+                variant="outline"
+                className="w-full border-zeolf-blue text-zeolf-blue hover:bg-zeolf-blue/5"
                 data-testid="button-upload"
               >
                 <Upload className="w-4 h-4 mr-2" />
-                Upload Document
+                Upload File
               </Button>
             </div>
             
@@ -340,6 +352,11 @@ export default function Dashboard() {
       <VideoConference 
         open={showVideoConference}
         onOpenChange={setShowVideoConference}
+      />
+      
+      <DocumentCreator 
+        open={showDocumentCreator}
+        onClose={() => setShowDocumentCreator(false)}
       />
     </div>
   );

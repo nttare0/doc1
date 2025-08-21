@@ -25,6 +25,11 @@ export const documents = pgTable("documents", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   metadata: jsonb("metadata"), // for additional document properties
+  // New fields for document creation
+  documentCode: text("document_code"), // Auto-generated code (e.g., PR-2024-001, MEMO-2024-001)
+  isTemplate: boolean("is_template").default(false),
+  content: jsonb("content"), // Document content for online editing
+  recipientInfo: jsonb("recipient_info"), // For letters: name, address, title
 });
 
 export const documentShares = pgTable("document_shares", {
@@ -63,6 +68,21 @@ export const insertDocumentSchema = createInsertSchema(documents).pick({
   fileSize: true,
   filePath: true,
   metadata: true,
+  documentCode: true,
+  isTemplate: true,
+  content: true,
+  recipientInfo: true,
+});
+
+// Schema for document creation form
+export const createDocumentSchema = z.object({
+  documentType: z.enum(["press_release", "memo", "internal_letter", "external_letter", "contract", "follow_up", "report"]),
+  title: z.string().min(1, "Title is required"),
+  fileType: z.enum(["word", "excel", "powerpoint"]),
+  recipientName: z.string().optional(),
+  recipientAddress: z.string().optional(),
+  recipientTitle: z.string().optional(),
+  isInternal: z.boolean().default(true),
 });
 
 export const insertDocumentShareSchema = createInsertSchema(documentShares).pick({
@@ -89,3 +109,4 @@ export type DocumentShare = typeof documentShares.$inferSelect;
 export type InsertDocumentShare = z.infer<typeof insertDocumentShareSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type CreateDocument = z.infer<typeof createDocumentSchema>;

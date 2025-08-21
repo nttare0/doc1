@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import DocumentViewer from "@/pages/document-viewer";
+import DocumentEditorPage from "@/pages/document-editor";
 import UserManagement from "@/pages/admin/user-management";
 import ActivityLogs from "@/pages/admin/activity-logs";
 
@@ -21,6 +22,7 @@ function Router() {
       {/* Protected routes */}
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/documents/:id" component={DocumentViewer} />
+      <ProtectedRoute path="/document/edit/:id" component={DocumentEditorPage} />
       <ProtectedRoute path="/admin/users" component={UserManagement} />
       <ProtectedRoute path="/admin/activity" component={ActivityLogs} />
       
