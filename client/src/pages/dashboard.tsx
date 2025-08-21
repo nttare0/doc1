@@ -238,7 +238,7 @@ export default function Dashboard() {
                     </div>
                     {stats && (
                       <span className="text-xs text-zeolf-text-secondary">
-                        {stats[category as keyof typeof stats]}
+                        {(stats as any)[category] || 0}
                       </span>
                     )}
                   </Button>

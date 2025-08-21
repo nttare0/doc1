@@ -56,7 +56,7 @@ interface FileViewerProps {
 
 export function FileViewer({ onClose }: FileViewerProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [sortBy, setSortBy] = useState("modified");
   const [location, setLocation] = useLocation();
@@ -118,7 +118,7 @@ export function FileViewer({ onClose }: FileViewerProps) {
 
   const filteredAndSortedDocuments = documents
     .filter(doc => {
-      if (selectedCategory && doc.category !== selectedCategory) return false;
+      if (selectedCategory && selectedCategory !== "all" && doc.category !== selectedCategory) return false;
       if (searchQuery && !doc.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       return true;
     })
@@ -182,7 +182,7 @@ export function FileViewer({ onClose }: FileViewerProps) {
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {Object.entries(categoryLabels).map(([key, label]) => (
                 <SelectItem key={key} value={key}>{label}</SelectItem>
               ))}
