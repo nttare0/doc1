@@ -28,6 +28,7 @@ export const documents = pgTable("documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   originalName: text("original_name").notNull(),
+  description: text("description"), // Optional description for uploaded files
   category: text("category").notNull(), // "press_releases", "memos", "internal_letters", "contracts", "follow_ups"
   fileType: text("file_type").notNull(), // "pdf", "word", "excel", "powerpoint"
   fileSize: integer("file_size").notNull(),
@@ -82,6 +83,7 @@ export const insertFolderSchema = createInsertSchema(folders).pick({
 export const insertDocumentSchema = createInsertSchema(documents).pick({
   name: true,
   originalName: true,
+  description: true,
   category: true,
   fileType: true,
   fileSize: true,
@@ -120,22 +122,19 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).pick({
   userAgent: true,
 });
 
-// Types
+// Export types
 export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
 export type Folder = typeof folders.$inferSelect;
+export type InsertFolder = typeof folders.$inferInsert;
 export type Document = typeof documents.$inferSelect;
+export type InsertDocument = typeof documents.$inferInsert;
 export type DocumentShare = typeof documentShares.$inferSelect;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type InsertFolder = z.infer<typeof insertFolderSchema>;
-export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+// Export insert types from zod schemas
+export type CreateUser = z.infer<typeof insertUserSchema>;
+export type CreateFolder = z.infer<typeof insertFolderSchema>;
+export type CreateDocument = z.infer<typeof createDocumentSchema>;
 export type InsertDocumentShare = z.infer<typeof insertDocumentShareSchema>;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
-export type CreateDocument = z.infer<typeof createDocumentSchema>;
-export type InsertDocument = z.infer<typeof insertDocumentSchema>;
-export type DocumentShare = typeof documentShares.$inferSelect;
-export type InsertDocumentShare = z.infer<typeof insertDocumentShareSchema>;
-export type ActivityLog = typeof activityLogs.$inferSelect;
-export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
-export type CreateDocument = z.infer<typeof createDocumentSchema>;

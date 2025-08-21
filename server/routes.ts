@@ -83,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const { category, name: customName } = req.body;
+      const { category, name: customName, folderId, description } = req.body;
       
       // Determine file type
       const getFileType = (mimetype: string) => {
@@ -105,6 +105,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileSize: req.file.size,
         filePath: req.file.path,
         uploadedBy: req.user!.id,
+        folderId: folderId || null,
+        description: description || null,
         metadata: {
           mimetype: req.file.mimetype,
           uploadedAt: new Date().toISOString(),
@@ -481,18 +483,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get individual folder details
-  app.get("/api/folders/:id", requireAuth, async (req, res) => {
-    try {
-      const folder = await storage.getFolder(req.params.id);
-      if (!folder) {
-        return res.status(404).json({ message: "Folder not found" });
-      }
-      res.json(folder);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
-
   app.get("/api/folders/:id", requireAuth, async (req, res) => {
     try {
       const folder = await storage.getFolder(req.params.id);

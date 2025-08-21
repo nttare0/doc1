@@ -1,6 +1,6 @@
 import { users, folders, documents, documentShares, activityLogs, type User, type InsertUser, type Folder, type InsertFolder, type Document, type InsertDocument, type DocumentShare, type InsertDocumentShare, type ActivityLog, type InsertActivityLog } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, count, like } from "drizzle-orm";
+import { eq, desc, and, or, count, like, sql, gt, lt } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -331,8 +331,8 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(documents.category, documentType),
           and(
-            db.sql`${documents.createdAt} >= ${yearStart}`,
-            db.sql`${documents.createdAt} < ${yearEnd}`
+            sql`${documents.createdAt} >= ${yearStart}`,
+            sql`${documents.createdAt} < ${yearEnd}`
           )
         )
       );
