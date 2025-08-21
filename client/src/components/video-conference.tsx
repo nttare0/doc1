@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -122,6 +125,12 @@ export function VideoConference({ open, onOpenChange }: VideoConferenceProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-full max-h-full w-screen h-screen p-0 bg-black">
+        <DialogHeader className="sr-only">
+          <DialogTitle>ZEOLF Team Video Conference</DialogTitle>
+          <DialogDescription>
+            Full-screen video conference meeting with screen sharing, chat, and recording capabilities.
+          </DialogDescription>
+        </DialogHeader>
         <div className="flex flex-col h-full" data-testid="video-conference">
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-black/50 text-white">

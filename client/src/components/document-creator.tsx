@@ -7,7 +7,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -124,15 +124,15 @@ export function DocumentCreator({ open, onClose, folderId, onDocumentCreated, on
           Create Document
         </Button>
       )}
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="document-creator-modal" aria-describedby="document-creator-description">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="document-creator-modal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileTypeIcon className="h-5 w-5" />
             Create New Document
           </DialogTitle>
-          <div id="document-creator-description" className="text-sm text-muted-foreground">
+          <DialogDescription>
             Create a new {selectedDocType?.label || 'document'} with automatic document coding and ZEOLF company headers.
-          </div>
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Plus, Edit, UserCheck, UserX, Copy, Loader2 } from "lucide-react";
@@ -130,6 +130,9 @@ export default function UserManagement() {
             <DialogContent data-testid="add-user-modal">
               <DialogHeader>
                 <DialogTitle>Create New User</DialogTitle>
+                <DialogDescription>
+                  Generate a unique login code for a new user account with assigned role permissions.
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleAddUser} className="space-y-4">
                 <div>
