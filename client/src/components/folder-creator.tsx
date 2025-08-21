@@ -222,7 +222,7 @@ export function FolderCreator({ isOpen, onClose, onSuccess }: FolderCreatorProps
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={() => setDialogOpen(false)}
                 data-testid="button-cancel-folder"
               >
                 Cancel
