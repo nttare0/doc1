@@ -6,7 +6,8 @@ import {
   Plus,
   Lock,
   Unlock,
-  Bot
+  Bot,
+  Upload
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { DocumentCreator } from "@/components/document-creator";
 import { GrokAssistant } from "@/components/grok-assistant";
 import { FolderDocumentList } from "@/components/folder-document-list";
 import { FolderSecurityModal } from "@/components/folder-security-modal";
+import { FileUploader } from "@/components/file-uploader";
 import type { Folder } from "@shared/schema";
 
 export default function FolderPage() {
@@ -28,6 +30,7 @@ export default function FolderPage() {
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showDocumentCreator, setShowDocumentCreator] = useState(false);
   const [showGrokAssistant, setShowGrokAssistant] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
 
   // Fetch folder details
   const { data: folder, isLoading: folderLoading } = useQuery<Folder>({
@@ -149,6 +152,15 @@ export default function FolderPage() {
                   AI Assistant
                 </Button>
                 <Button
+                  onClick={() => setShowFileUpload(true)}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  data-testid="button-upload-file"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload File
+                </Button>
+                <Button
                   onClick={() => setShowDocumentCreator(true)}
                   className="bg-zeolf-blue hover:bg-zeolf-blue-dark"
                   data-testid="button-create-document"
@@ -223,6 +235,19 @@ export default function FolderPage() {
           toast({
             title: "Document created",
             description: "Your document has been created successfully",
+          });
+        }}
+      />
+
+      <FileUploader
+        open={showFileUpload}
+        onClose={() => setShowFileUpload(false)}
+        folderId={folderId!}
+        onSuccess={() => {
+          setShowFileUpload(false);
+          toast({
+            title: "File uploaded",
+            description: "Your file has been uploaded successfully",
           });
         }}
       />
