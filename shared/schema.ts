@@ -105,6 +105,7 @@ export const createDocumentSchema = z.object({
   recipientAddress: z.string().optional(),
   recipientTitle: z.string().optional(),
   isInternal: z.boolean().default(true),
+  folderId: z.string().optional(),
 });
 
 export const insertDocumentShareSchema = createInsertSchema(documentShares).pick({

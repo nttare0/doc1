@@ -55,6 +55,7 @@ export function DocumentCreator({ open, onClose, folderId, onDocumentCreated, on
       recipientName: "",
       recipientAddress: "",
       recipientTitle: "",
+      folderId: folderId || "",
     },
   });
 
@@ -121,12 +122,15 @@ export function DocumentCreator({ open, onClose, folderId, onDocumentCreated, on
           Create Document
         </Button>
       )}
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="document-creator-modal">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="document-creator-modal" aria-describedby="document-creator-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileTypeIcon className="h-5 w-5" />
             Create New Document
           </DialogTitle>
+          <div id="document-creator-description" className="text-sm text-muted-foreground">
+            Create a new {selectedDocType?.label || 'document'} with automatic document coding and ZEOLF company headers.
+          </div>
         </DialogHeader>
 
         <Form {...form}>
