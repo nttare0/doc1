@@ -13,6 +13,17 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const folders = pgTable("folders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  securityCode: text("security_code"), // Optional security code for folder access
+  hasSecurityCode: boolean("has_security_code").default(false),
+  createdBy: varchar("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const documents = pgTable("documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -21,6 +32,7 @@ export const documents = pgTable("documents", {
   fileType: text("file_type").notNull(), // "pdf", "word", "excel", "powerpoint"
   fileSize: integer("file_size").notNull(),
   filePath: text("file_path").notNull(),
+  folderId: varchar("folder_id").references(() => folders.id), // Documents must belong to a folder
   uploadedBy: varchar("uploaded_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -60,6 +72,13 @@ export const insertUserSchema = createInsertSchema(users).pick({
   role: true,
 });
 
+export const insertFolderSchema = createInsertSchema(folders).pick({
+  name: true,
+  description: true,
+  securityCode: true,
+  hasSecurityCode: true,
+});
+
 export const insertDocumentSchema = createInsertSchema(documents).pick({
   name: true,
   originalName: true,
@@ -67,6 +86,7 @@ export const insertDocumentSchema = createInsertSchema(documents).pick({
   fileType: true,
   fileSize: true,
   filePath: true,
+  folderId: true,
   metadata: true,
   documentCode: true,
   isTemplate: true,
@@ -103,6 +123,8 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).pick({
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type Folder = typeof folders.$inferSelect;
+export type InsertFolder = z.infer<typeof insertFolderSchema>;
 export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type DocumentShare = typeof documentShares.$inferSelect;

@@ -1,4 +1,4 @@
-import { users, documents, documentShares, activityLogs, type User, type InsertUser, type Document, type InsertDocument, type DocumentShare, type InsertDocumentShare, type ActivityLog, type InsertActivityLog } from "@shared/schema";
+import { users, folders, documents, documentShares, activityLogs, type User, type InsertUser, type Folder, type InsertFolder, type Document, type InsertDocument, type DocumentShare, type InsertDocumentShare, type ActivityLog, type InsertActivityLog } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, count, like } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -13,10 +13,21 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   
+  // Folder operations
+  createFolder(folder: InsertFolder): Promise<Folder>;
+  getFolder(id: string): Promise<Folder | undefined>;
+  getFolderByName(name: string): Promise<Folder | undefined>;
+  getUserFolders(userId: string): Promise<Folder[]>;
+  getAllFolders(): Promise<Folder[]>;
+  updateFolder(id: string, updates: Partial<Folder>): Promise<Folder | undefined>;
+  deleteFolder(id: string): Promise<boolean>;
+  verifyFolderAccess(folderId: string, securityCode?: string): Promise<boolean>;
+  
   // Document operations
   createDocument(document: InsertDocument): Promise<Document>;
   getDocument(id: string): Promise<Document | undefined>;
   getUserDocuments(userId: string): Promise<Document[]>;
+  getFolderDocuments(folderId: string): Promise<Document[]>;
   getAllDocuments(): Promise<Document[]>;
   getDocumentsByCategory(category: string): Promise<Document[]>;
   searchDocuments(query: string): Promise<Document[]>;
@@ -74,6 +85,60 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id));
   }
 
+  // Folder operations implementation
+  async createFolder(insertFolder: InsertFolder & { createdBy: string }): Promise<Folder> {
+    const [folder] = await db
+      .insert(folders)
+      .values(insertFolder)
+      .returning();
+    return folder;
+  }
+
+  async getFolder(id: string): Promise<Folder | undefined> {
+    const [folder] = await db.select().from(folders).where(eq(folders.id, id));
+    return folder || undefined;
+  }
+
+  async getFolderByName(name: string): Promise<Folder | undefined> {
+    const [folder] = await db.select().from(folders).where(eq(folders.name, name));
+    return folder || undefined;
+  }
+
+  async getUserFolders(userId: string): Promise<Folder[]> {
+    return await db.select().from(folders).where(eq(folders.createdBy, userId)).orderBy(desc(folders.createdAt));
+  }
+
+  async getAllFolders(): Promise<Folder[]> {
+    return await db.select().from(folders).orderBy(desc(folders.createdAt));
+  }
+
+  async updateFolder(id: string, updates: Partial<Folder>): Promise<Folder | undefined> {
+    const [folder] = await db
+      .update(folders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(folders.id, id))
+      .returning();
+    return folder || undefined;
+  }
+
+  async deleteFolder(id: string): Promise<boolean> {
+    const result = await db.delete(folders).where(eq(folders.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async verifyFolderAccess(folderId: string, securityCode?: string): Promise<boolean> {
+    const folder = await this.getFolder(folderId);
+    if (!folder) return false;
+    
+    if (!folder.hasSecurityCode) return true;
+    
+    return folder.securityCode === securityCode;
+  }
+
+  async getFolderDocuments(folderId: string): Promise<Document[]> {
+    return await db.select().from(documents).where(eq(documents.folderId, folderId)).orderBy(desc(documents.createdAt));
+  }
+
   async generateLoginCode(): Promise<string> {
     let attempts = 0;
     const maxAttempts = 10;
@@ -99,7 +164,7 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
     const [user] = await db
       .update(users)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(updates)
       .where(eq(users.id, id))
       .returning();
     return user || undefined;
@@ -165,7 +230,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDocument(id: string): Promise<boolean> {
     const result = await db.delete(documents).where(eq(documents.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async shareDocument(insertShare: InsertDocumentShare & { sharedBy: string }): Promise<DocumentShare> {
@@ -196,7 +261,7 @@ export class DatabaseStorage implements IStorage {
 
   async removeDocumentShare(id: string): Promise<boolean> {
     const result = await db.delete(documentShares).where(eq(documentShares.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async createActivityLog(insertLog: InsertActivityLog & { userId: string }): Promise<ActivityLog> {

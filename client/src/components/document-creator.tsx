@@ -16,8 +16,10 @@ import { Switch } from "@/components/ui/switch";
 import { FileText, FileSpreadsheet, Presentation, Loader2 } from "lucide-react";
 
 interface DocumentCreatorProps {
-  open: boolean;
-  onClose: () => void;
+  open?: boolean;
+  onClose?: () => void;
+  folderId?: string;
+  onDocumentCreated?: () => void;
 }
 
 const documentTypeOptions = [
@@ -36,7 +38,8 @@ const fileTypeIcons = {
   powerpoint: Presentation,
 };
 
-export function DocumentCreator({ open, onClose }: DocumentCreatorProps) {
+export function DocumentCreator({ open, onClose, folderId, onDocumentCreated }: DocumentCreatorProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showRecipientFields, setShowRecipientFields] = useState(false);
@@ -56,7 +59,8 @@ export function DocumentCreator({ open, onClose }: DocumentCreatorProps) {
 
   const createDocumentMutation = useMutation({
     mutationFn: async (data: CreateDocument) => {
-      const response = await apiRequest("POST", "/api/documents/create", data);
+      const requestData = folderId ? { ...data, folderId } : data;
+      const response = await apiRequest("POST", "/api/documents/create", requestData);
       return await response.json();
     },
     onSuccess: (document) => {
@@ -65,8 +69,16 @@ export function DocumentCreator({ open, onClose }: DocumentCreatorProps) {
         description: `${document.name} has been created with code ${document.documentCode}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
-      onClose();
+      if (folderId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/folders", folderId, "documents"] });
+      }
+      if (open !== undefined) {
+        onClose?.();
+      } else {
+        setIsOpen(false);
+      }
       form.reset();
+      onDocumentCreated?.();
       // Redirect to document editor
       window.location.href = `/document/edit/${document.id}`;
     },
@@ -92,8 +104,21 @@ export function DocumentCreator({ open, onClose }: DocumentCreatorProps) {
   const selectedDocType = documentTypeOptions.find(opt => opt.value === watchDocumentType);
   const FileTypeIcon = fileTypeIcons[watchFileType];
 
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
+  const dialogOpen = open !== undefined ? open : isOpen;
+  const handleOpenChange = onClose || ((open: boolean) => setIsOpen(open));
+
+  const DialogComponent = () => (
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+      {open === undefined && (
+        <Button 
+          className="bg-zeolf-primary hover:bg-zeolf-primary-dark"
+          onClick={() => setIsOpen(true)}
+          data-testid="button-create-document"
+        >
+          <FileText className="w-4 h-4 mr-2" />
+          Create Document
+        </Button>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="document-creator-modal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -304,7 +329,7 @@ export function DocumentCreator({ open, onClose }: DocumentCreatorProps) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={onClose}
+                onClick={() => handleOpenChange(false)}
                 disabled={createDocumentMutation.isPending}
                 data-testid="button-cancel"
               >
@@ -326,4 +351,6 @@ export function DocumentCreator({ open, onClose }: DocumentCreatorProps) {
       </DialogContent>
     </Dialog>
   );
+
+  return <DialogComponent />;
 }

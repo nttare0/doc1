@@ -5,7 +5,8 @@ import { storage } from "./storage";
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
-import { insertDocumentSchema, insertDocumentShareSchema, insertActivityLogSchema } from "@shared/schema";
+import { insertFolderSchema, insertDocumentSchema, insertDocumentShareSchema, insertActivityLogSchema } from "@shared/schema";
+import { grokService } from "./grokService";
 import { z } from "zod";
 
 // Configure multer for file uploads
@@ -339,10 +340,179 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Folder routes
+  app.post("/api/folders", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertFolderSchema.parse(req.body);
+      
+      const folder = await storage.createFolder({
+        ...validatedData,
+        createdBy: req.user!.id,
+      });
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user!.id,
+        action: "create",
+        resourceType: "folder",
+        resourceId: folder.id,
+        details: {
+          folderName: folder.name,
+          hasSecurityCode: folder.hasSecurityCode,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.status(201).json(folder);
+    } catch (error: any) {
+      console.error('Create folder error:', error);
+      res.status(500).json({ message: error.message || "Failed to create folder" });
+    }
+  });
+
+  app.get("/api/folders", requireAuth, async (req, res) => {
+    try {
+      const folders = await storage.getAllFolders();
+      res.json(folders);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/folders/:id", requireAuth, async (req, res) => {
+    try {
+      const folder = await storage.getFolder(req.params.id);
+      if (!folder) {
+        return res.status(404).json({ message: "Folder not found" });
+      }
+      res.json(folder);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/folders/:id/documents", requireAuth, async (req, res) => {
+    try {
+      const documents = await storage.getFolderDocuments(req.params.id);
+      res.json(documents);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/folders/:id/verify-access", requireAuth, async (req, res) => {
+    try {
+      const { securityCode } = req.body;
+      const folderId = req.params.id;
+      
+      const folder = await storage.getFolder(folderId);
+      if (!folder) {
+        return res.status(404).json({ message: "Folder not found" });
+      }
+
+      if (!folder.hasSecurityCode) {
+        return res.json({ success: true });
+      }
+
+      if (folder.securityCode !== securityCode) {
+        return res.status(401).json({ message: "Invalid security code" });
+      }
+
+      // Log access
+      await storage.createActivityLog({
+        userId: req.user!.id,
+        action: "access",
+        resourceType: "folder",
+        resourceId: folderId,
+        details: { folderName: folder.name },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // AI Assistant routes
+  app.post("/api/ai/generate-template", requireAuth, async (req, res) => {
+    try {
+      const template = await grokService.generateTemplate(req.body);
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user!.id,
+        action: "ai_generate_template",
+        resourceType: "ai",
+        details: {
+          documentType: req.body.documentType,
+          title: req.body.title,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({ template });
+    } catch (error: any) {
+      console.error('AI template generation error:', error);
+      res.status(500).json({ message: error.message || "Failed to generate template" });
+    }
+  });
+
+  app.post("/api/ai/research", requireAuth, async (req, res) => {
+    try {
+      const research = await grokService.performResearch(req.body);
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user!.id,
+        action: "ai_research",
+        resourceType: "ai",
+        details: {
+          topic: req.body.topic,
+          documentType: req.body.documentType,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({ research });
+    } catch (error: any) {
+      console.error('AI research error:', error);
+      res.status(500).json({ message: error.message || "Failed to perform research" });
+    }
+  });
+
+  app.post("/api/ai/improve-content", requireAuth, async (req, res) => {
+    try {
+      const improvedContent = await grokService.improveContent(req.body);
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user!.id,
+        action: "ai_improve_content",
+        resourceType: "ai",
+        details: {
+          documentType: req.body.documentType,
+          contentLength: req.body.content?.length || 0,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({ improvedContent });
+    } catch (error: any) {
+      console.error('AI content improvement error:', error);
+      res.status(500).json({ message: error.message || "Failed to improve content" });
+    }
+  });
+
   // Create document from template
   app.post("/api/documents/create", requireAuth, async (req, res) => {
     try {
-      const { documentType, title, fileType, recipientName, recipientAddress, recipientTitle, isInternal } = req.body;
+      const { documentType, title, fileType, recipientName, recipientAddress, recipientTitle, isInternal, folderId } = req.body;
       
       // Generate document code
       const year = new Date().getFullYear();
@@ -402,6 +572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileSize: 0, // Template documents start with 0 size
         filePath: `templates/${documentCode}`, // Virtual path for templates
         uploadedBy: req.user!.id,
+        folderId: folderId || null,
         documentCode: documentCode,
         isTemplate: false,
         content: initialContent,

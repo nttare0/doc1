@@ -37,8 +37,7 @@ import { Document } from "@shared/schema";
 import { DocumentCard } from "@/components/document-card";
 import { UploadModal } from "@/components/upload-modal";
 import { VideoConference } from "@/components/video-conference";
-import { DocumentCreator } from "@/components/document-creator";
-import { FileViewer } from "@/components/file-viewer";
+import { FileLibrary } from "@/components/file-library";
 
 const categoryIcons = {
   press_releases: { icon: Newspaper, color: "text-zeolf-accent", bgColor: "bg-zeolf-accent/10" },
@@ -65,7 +64,7 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState("modified");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showVideoConference, setShowVideoConference] = useState(false);
-  const [showDocumentCreator, setShowDocumentCreator] = useState(false);
+
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [showFileViewer, setShowFileViewer] = useState(false);
 
@@ -315,46 +314,8 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Document Grid */}
-            {documentsLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <Card key={i}>
-                    <CardContent className="p-4">
-                      <Skeleton className="h-10 w-10 rounded-lg mb-3" />
-                      <Skeleton className="h-4 w-3/4 mb-2" />
-                      <Skeleton className="h-3 w-1/2 mb-2" />
-                      <Skeleton className="h-3 w-1/3" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : documents.length === 0 ? (
-              <div className="text-center py-16">
-                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-zeolf-text mb-2">No documents found</h3>
-                <p className="text-zeolf-text-secondary mb-6">
-                  {searchQuery || selectedCategory 
-                    ? "Try adjusting your search or filters"
-                    : "Get started by uploading your first document"
-                  }
-                </p>
-                <Button 
-                  onClick={() => setShowUploadModal(true)}
-                  className="bg-zeolf-blue hover:bg-zeolf-blue-dark"
-                  data-testid="button-upload-empty"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Document
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {documents.map((document) => (
-                  <DocumentCard key={document.id} document={document} />
-                ))}
-              </div>
-            )}
+            {/* File Library - Folder-based Document Management */}
+            <FileLibrary />
           </div>
         </main>
       </div>
@@ -370,10 +331,7 @@ export default function Dashboard() {
         onOpenChange={setShowVideoConference}
       />
       
-      <DocumentCreator 
-        open={showDocumentCreator}
-        onClose={() => setShowDocumentCreator(false)}
-      />
+
 
       {/* File Viewer Modal */}
       {showFileViewer && (
