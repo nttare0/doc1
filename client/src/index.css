@@ -1,0 +1,232 @@
+@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(201 32% 19%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(201 32% 19%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(201 32% 19%);
+  --primary: hsl(207 87% 42%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(201 32% 19%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --muted: hsl(210 40% 98%);
+  --muted-foreground: hsl(215 16% 47%);
+  --accent: hsl(197 96% 47%);
+  --accent-foreground: hsl(207 87% 42%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(207 87% 42%);
+  --chart-1: hsl(207 87% 42%);
+  --chart-2: hsl(159 100% 36%);
+  --chart-3: hsl(42 93% 56%);
+  --chart-4: hsl(147 79% 42%);
+  --chart-5: hsl(341 75% 51%);
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(201 32% 19%);
+  --sidebar-primary: hsl(207 87% 42%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(197 96% 47%);
+  --sidebar-accent-foreground: hsl(207 87% 42%);
+  --sidebar-border: hsl(214 32% 91%);
+  --sidebar-ring: hsl(207 87% 42%);
+  --font-sans: 'Segoe UI', system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.75rem;
+  --shadow-2xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.05);
+  --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0px 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+  
+  /* ZEOLF Brand Colors */
+  --zeolf-blue: hsl(207 87% 42%);
+  --zeolf-blue-dark: hsl(211 80% 37%);
+  --zeolf-accent: hsl(197 96% 47%);
+  --zeolf-success: hsl(124 100% 26%);
+  --zeolf-warning: hsl(36 100% 50%);
+  --zeolf-error: hsl(348 84% 50%);
+  --zeolf-bg: hsl(0 0% 98%);
+  --zeolf-surface: hsl(0 0% 100%);
+  --zeolf-text: hsl(201 32% 19%);
+  --zeolf-text-secondary: hsl(215 16% 47%);
+}
+
+.dark {
+  --background: hsl(224 71% 4%);
+  --foreground: hsl(213 31% 91%);
+  --card: hsl(224 71% 4%);
+  --card-foreground: hsl(213 31% 91%);
+  --popover: hsl(224 71% 4%);
+  --popover-foreground: hsl(213 31% 91%);
+  --primary: hsl(210 40% 98%);
+  --primary-foreground: hsl(222 84% 5%);
+  --secondary: hsl(222 84% 5%);
+  --secondary-foreground: hsl(210 40% 98%);
+  --muted: hsl(223 47% 11%);
+  --muted-foreground: hsl(215 20% 65%);
+  --accent: hsl(216 34% 17%);
+  --accent-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 63% 31%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(216 34% 17%);
+  --input: hsl(216 34% 17%);
+  --ring: hsl(216 34% 17%);
+  --chart-1: hsl(220 70% 50%);
+  --chart-2: hsl(160 60% 45%);
+  --chart-3: hsl(30 80% 55%);
+  --chart-4: hsl(280 65% 60%);
+  --chart-5: hsl(340 75% 55%);
+  --sidebar: hsl(224 71% 4%);
+  --sidebar-foreground: hsl(213 31% 91%);
+  --sidebar-primary: hsl(210 40% 98%);
+  --sidebar-primary-foreground: hsl(222 84% 5%);
+  --sidebar-accent: hsl(216 34% 17%);
+  --sidebar-accent-foreground: hsl(210 40% 98%);
+  --sidebar-border: hsl(216 34% 17%);
+  --sidebar-ring: hsl(216 34% 17%);
+  
+  /* ZEOLF Brand Colors - Dark Mode */
+  --zeolf-blue: hsl(207 87% 52%);
+  --zeolf-blue-dark: hsl(211 80% 47%);
+  --zeolf-accent: hsl(197 96% 57%);
+  --zeolf-success: hsl(124 100% 36%);
+  --zeolf-warning: hsl(36 100% 60%);
+  --zeolf-error: hsl(348 84% 60%);
+  --zeolf-bg: hsl(224 71% 4%);
+  --zeolf-surface: hsl(224 71% 4%);
+  --zeolf-text: hsl(213 31% 91%);
+  --zeolf-text-secondary: hsl(215 20% 65%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* ZEOLF Custom Utilities */
+.text-zeolf-blue {
+  color: var(--zeolf-blue);
+}
+
+.text-zeolf-blue-dark {
+  color: var(--zeolf-blue-dark);
+}
+
+.text-zeolf-accent {
+  color: var(--zeolf-accent);
+}
+
+.text-zeolf-success {
+  color: var(--zeolf-success);
+}
+
+.text-zeolf-warning {
+  color: var(--zeolf-warning);
+}
+
+.text-zeolf-error {
+  color: var(--zeolf-error);
+}
+
+.text-zeolf-text {
+  color: var(--zeolf-text);
+}
+
+.text-zeolf-text-secondary {
+  color: var(--zeolf-text-secondary);
+}
+
+.bg-zeolf-blue {
+  background-color: var(--zeolf-blue);
+}
+
+.bg-zeolf-blue-dark {
+  background-color: var(--zeolf-blue-dark);
+}
+
+.bg-zeolf-accent {
+  background-color: var(--zeolf-accent);
+}
+
+.bg-zeolf-success {
+  background-color: var(--zeolf-success);
+}
+
+.bg-zeolf-warning {
+  background-color: var(--zeolf-warning);
+}
+
+.bg-zeolf-error {
+  background-color: var(--zeolf-error);
+}
+
+.bg-zeolf-bg {
+  background-color: var(--zeolf-bg);
+}
+
+.bg-zeolf-surface {
+  background-color: var(--zeolf-surface);
+}
+
+.hover\:bg-zeolf-blue-dark:hover {
+  background-color: var(--zeolf-blue-dark);
+}
+
+.hover\:bg-zeolf-accent\/90:hover {
+  background-color: hsl(from var(--zeolf-accent) h s l / 0.9);
+}
+
+.border-zeolf-blue {
+  border-color: var(--zeolf-blue);
+}
+
+.focus\:ring-zeolf-blue:focus {
+  --tw-ring-color: var(--zeolf-blue);
+}
+
+.focus\:border-zeolf-blue:focus {
+  border-color: var(--zeolf-blue);
+}
+
+/* ZEOLF opacity utilities */
+.bg-zeolf-blue\/10 {
+  background-color: hsl(from var(--zeolf-blue) h s l / 0.1);
+}
+
+.bg-zeolf-blue\/5 {
+  background-color: hsl(from var(--zeolf-blue) h s l / 0.05);
+}
+
+.bg-zeolf-accent\/10 {
+  background-color: hsl(from var(--zeolf-accent) h s l / 0.1);
+}
+
+.bg-zeolf-success\/10 {
+  background-color: hsl(from var(--zeolf-success) h s l / 0.1);
+}
+
+.bg-zeolf-warning\/10 {
+  background-color: hsl(from var(--zeolf-warning) h s l / 0.1);
+}
+
+.bg-zeolf-error\/10 {
+  background-color: hsl(from var(--zeolf-error) h s l / 0.1);
+}
