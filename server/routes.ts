@@ -350,9 +350,16 @@ Generated: ${new Date().toLocaleDateString()}
         const fileStats = await fs.stat(document.filePath);
         console.log('File stats:', fileStats.size, 'bytes');
         
-        // For small files, check if they might be corrupted
+        // For small files or Word documents, check if they might be corrupted
         if (fileStats.size < 1000) {
           console.warn('Warning: File size is very small, might be corrupted');
+          
+          // For Word documents, provide specific guidance
+          if (document.fileType === 'docx') {
+            return res.status(400).json({ 
+              message: "This document appears to be corrupted or is not a valid Word file. Please upload a proper .docx file created in Microsoft Word." 
+            });
+          }
         }
         
         // Send the file
@@ -385,6 +392,24 @@ Generated: ${new Date().toLocaleDateString()}
       }
 
       console.log('Updating document with file:', req.file.originalname, 'Size:', req.file.size);
+
+      // Validate file content for Word documents
+      if (req.file.originalname.toLowerCase().endsWith('.docx')) {
+        try {
+          const fileBuffer = await fs.readFile(req.file.path);
+          const isValidDocx = fileBuffer.length > 1000 && fileBuffer.subarray(0, 4).toString('hex') === '504b0304';
+          if (!isValidDocx) {
+            console.warn('Invalid .docx file detected - not a proper Word document');
+            await fs.unlink(req.file.path); // Clean up invalid file
+            return res.status(400).json({ 
+              message: "Invalid Word document. Please upload a genuine .docx file created in Microsoft Word." 
+            });
+          }
+        } catch (validationError) {
+          console.error('File validation error:', validationError);
+          return res.status(400).json({ message: "File validation failed" });
+        }
+      }
 
       const { category, description } = req.body;
       

@@ -195,7 +195,7 @@ export function FolderDocumentList({ folderId }: FolderDocumentListProps) {
       console.error('Document update error:', error);
       toast({
         title: "Update failed",
-        description: error.message,
+        description: error.message || "Please ensure you upload a valid document file",
         variant: "destructive",
       });
     },
