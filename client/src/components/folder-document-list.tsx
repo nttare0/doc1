@@ -155,6 +155,66 @@ export function FolderDocumentList({ folderId }: FolderDocumentListProps) {
     },
   });
 
+  // Update document mutation
+  const updateDocumentMutation = useMutation({
+    mutationFn: async ({ documentId, file }: { documentId: string; file: File }) => {
+      console.log('Starting document update for ID:', documentId, 'with file:', file.name);
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const response = await fetch(`/api/documents/${documentId}/update`, {
+        method: "PUT",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+        throw new Error(errorData.message || "Update failed");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data, { documentId }) => {
+      console.log('Document update successful:', data);
+      queryClient.invalidateQueries({ queryKey: ["/api/folders", folderId, "documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/documents", documentId] });
+      toast({
+        title: "Document updated",
+        description: "File has been updated successfully with the same document ID",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Document update error:', error);
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle file input change for document update
+  const handleFileUpdate = (documentId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('=== FOLDER UPDATE BUTTON CLICKED ===');
+    console.log('Document ID:', documentId);
+    const file = event.target.files?.[0];
+    if (file) {
+      console.log('File selected for update:', file.name, 'Size:', file.size);
+      updateDocumentMutation.mutate({ documentId, file });
+      // Reset the input so the same file can be selected again if needed
+      event.target.value = '';
+    } else {
+      console.log('No file selected for update');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -274,15 +334,24 @@ export function FolderDocumentList({ folderId }: FolderDocumentListProps) {
                 View (Download)
               </Button>
               
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-                data-testid={`button-update-${document.id}`}
-              >
-                <Upload className="w-4 h-4" />
-                Update
-              </Button>
+              <label className="relative cursor-pointer">
+                <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 gap-2">
+                  {updateDocumentMutation.isPending ? (
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  Update
+                </div>
+                <input
+                  type="file"
+                  onChange={(e) => handleFileUpdate(document.id, e)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                  data-testid={`input-file-update-${document.id}`}
+                  disabled={updateDocumentMutation.isPending}
+                />
+              </label>
               
               <Button
                 variant="outline"
