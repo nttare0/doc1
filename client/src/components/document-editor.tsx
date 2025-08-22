@@ -185,16 +185,29 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
   };
 
   const handleFileUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('=== UPDATE BUTTON DIAGNOSIS ===');
     console.log('File input change event triggered');
+    console.log('Event target:', event.target);
+    console.log('Files array:', event.target.files);
+    console.log('Document ID:', documentId);
+    
     const file = event.target.files?.[0];
     if (file) {
-      console.log('File selected:', file.name, 'Size:', file.size, 'Type:', file.type);
+      console.log('✓ File selected successfully:');
+      console.log('  - Name:', file.name);
+      console.log('  - Size:', file.size, 'bytes');
+      console.log('  - Type:', file.type);
+      console.log('  - Last modified:', new Date(file.lastModified));
+      console.log('Starting mutation...');
+      
       updateDocumentMutation.mutate(file);
+      
       // Reset the input so the same file can be selected again if needed
       event.target.value = '';
     } else {
-      console.log('No file selected');
+      console.log('✗ No file selected - files array is empty');
     }
+    console.log('=== END DIAGNOSIS ===');
   };
 
   if (isLoading) {
@@ -401,7 +414,25 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
             Save
           </Button>
 
-          <label className="relative cursor-pointer inline-block">
+          {/* Diagnostic test button */}
+          <Button
+            variant="outline"
+            className="border-red-200 text-red-600 hover:bg-red-50"
+            onClick={() => {
+              console.log('🔧 DIAGNOSTIC TEST BUTTON CLICKED');
+              console.log('Document ID:', documentId);
+              console.log('Mutation pending:', updateDocumentMutation.isPending);
+              console.log('Document object:', document);
+              alert('Diagnostic test - check console for details');
+            }}
+          >
+            Test
+          </Button>
+
+          <label 
+            className="relative cursor-pointer inline-block"
+            onClick={() => console.log('✓ Label clicked - should trigger file dialog')}
+          >
             <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-blue-200 bg-background hover:bg-blue-50 hover:border-blue-300 h-10 px-4 py-2 text-blue-600">
               {updateDocumentMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -413,10 +444,12 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
             <input
               type="file"
               onChange={handleFileUpdate}
+              onClick={() => console.log('✓ File input clicked')}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
               data-testid="input-file-update"
               disabled={updateDocumentMutation.isPending}
+              style={{ zIndex: 10 }}
             />
           </label>
           
