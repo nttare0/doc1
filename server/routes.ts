@@ -52,6 +52,8 @@ const upload = multer({
     fileSize: 50 * 1024 * 1024, // 50MB limit
   },
   fileFilter: (req, file, cb) => {
+    console.log('File upload - Name:', file.originalname, 'MIME type:', file.mimetype, 'Size:', file.size);
+    
     const allowedMimes = [
       'application/pdf',
       'application/msword',
@@ -62,10 +64,15 @@ const upload = multer({
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     ];
     
-    if (allowedMimes.includes(file.mimetype)) {
+    // Additional check for file extensions
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    
+    if (allowedMimes.includes(file.mimetype) && allowedExtensions.includes(fileExtension)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only PDF, Word, Excel, and PowerPoint files are allowed.'));
+      console.error('File rejected - MIME:', file.mimetype, 'Extension:', fileExtension);
+      cb(new Error(`Invalid file type. File: ${file.originalname}, MIME: ${file.mimetype}. Only PDF, Word, Excel, and PowerPoint files are allowed.`));
     }
   }
 });
@@ -338,8 +345,22 @@ Generated: ${new Date().toLocaleDateString()}
       
       console.log('Downloading file:', document.filePath, 'MIME type:', mimeType);
       
-      // Send the file
-      res.sendFile(path.resolve(document.filePath));
+      // Check if file is valid before sending
+      try {
+        const fileStats = await fs.stat(document.filePath);
+        console.log('File stats:', fileStats.size, 'bytes');
+        
+        // For small files, check if they might be corrupted
+        if (fileStats.size < 1000) {
+          console.warn('Warning: File size is very small, might be corrupted');
+        }
+        
+        // Send the file
+        res.sendFile(path.resolve(document.filePath));
+      } catch (fileError) {
+        console.error('File access error:', fileError);
+        return res.status(404).json({ message: "File not accessible" });
+      }
     } catch (error: any) {
       console.error('Download error:', error);
       res.status(500).json({ message: error.message });
