@@ -327,16 +327,21 @@ Generated: ${new Date().toLocaleDateString()}
   // Update document (same file ID)
   app.put("/api/documents/:id/update", requireAuth, upload.single('file'), async (req, res) => {
     try {
+      console.log('Document update request received for ID:', req.params.id);
       const documentId = req.params.id;
       const existingDocument = await storage.getDocument(documentId);
       
       if (!existingDocument) {
+        console.log('Document not found:', documentId);
         return res.status(404).json({ message: "Document not found" });
       }
 
       if (!req.file) {
+        console.log('No file uploaded in request');
         return res.status(400).json({ message: "No file uploaded" });
       }
+
+      console.log('Updating document with file:', req.file.originalname, 'Size:', req.file.size);
 
       const { category, description } = req.body;
       
@@ -347,16 +352,16 @@ Generated: ${new Date().toLocaleDateString()}
         console.warn('Could not delete old file:', error);
       }
 
-      // Update document with new file
+      // Update document with new file, keeping the same name and document properties
       const updatedDocument = await storage.updateDocument(documentId, {
-        name: req.file.originalname.replace(/\.[^/.]+$/, ""), // Remove extension
+        // Keep the original document name and properties, only update file-related fields
         originalName: req.file.originalname,
         filePath: req.file.path,
         fileSize: req.file.size,
-
         fileType: path.extname(req.file.originalname).toLowerCase().substring(1),
-        category: category || existingDocument.category,
         updatedAt: new Date(),
+        // Reset content since this is a file replacement
+        content: null,
       });
 
       if (!updatedDocument) {
