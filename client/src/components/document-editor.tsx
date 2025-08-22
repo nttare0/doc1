@@ -185,12 +185,15 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
   };
 
   const handleFileUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('File input change event triggered');
     const file = event.target.files?.[0];
     if (file) {
-      console.log('Updating document with file:', file.name, file.size);
+      console.log('File selected:', file.name, 'Size:', file.size, 'Type:', file.type);
       updateDocumentMutation.mutate(file);
       // Reset the input so the same file can be selected again if needed
       event.target.value = '';
+    } else {
+      console.log('No file selected');
     }
   };
 
@@ -398,39 +401,24 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
             Save
           </Button>
 
-          <div className="relative">
-            <Button
-              variant="outline"
-              className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
-              disabled={updateDocumentMutation.isPending}
-              data-testid="button-update-document"
-              onClick={() => {
-                console.log('Update button clicked');
-                const fileInput = window.document.getElementById('file-update-input') as HTMLInputElement;
-                if (fileInput) {
-                  console.log('File input found, triggering click');
-                  fileInput.click();
-                } else {
-                  console.error('File input not found');
-                }
-              }}
-            >
+          <label className="relative cursor-pointer inline-block">
+            <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-blue-200 bg-background hover:bg-blue-50 hover:border-blue-300 h-10 px-4 py-2 text-blue-600">
               {updateDocumentMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Upload className="mr-2 h-4 w-4" />
               )}
               Update
-            </Button>
+            </div>
             <input
-              id="file-update-input"
               type="file"
               onChange={handleFileUpdate}
-              className="hidden"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
               data-testid="input-file-update"
+              disabled={updateDocumentMutation.isPending}
             />
-          </div>
+          </label>
           
           <Button
             onClick={handleExport}
