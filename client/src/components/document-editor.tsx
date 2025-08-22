@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Save, 
   Download, 
+  Upload,
   FileText, 
   FileSpreadsheet, 
   Presentation,
@@ -41,6 +42,7 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
     slides: [{ title: "", content: "" }]
   });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   // Fetch document data
   const { data: document, isLoading } = useQuery<Document>({
@@ -100,6 +102,43 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
     },
   });
 
+  // Update document file mutation
+  const updateDocumentMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("keepSameId", "true");
+      
+      const response = await fetch(`/api/documents/${documentId}/update`, {
+        method: "PUT",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Update failed");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents", documentId] });
+      setShowUpdateModal(false);
+      toast({
+        title: "Document updated",
+        description: "File has been updated successfully with the same document ID",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed", 
+        description: error.message || "Could not update document file",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Load initial content
   useEffect(() => {
     if (document?.content) {
@@ -128,6 +167,13 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
 
   const handleExport = () => {
     exportToPdfMutation.mutate();
+  };
+
+  const handleFileUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      updateDocumentMutation.mutate(file);
+    }
   };
 
   if (isLoading) {
@@ -333,6 +379,31 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
             )}
             Save
           </Button>
+
+          <div className="relative">
+            <Button
+              variant="outline"
+              className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+              disabled={updateDocumentMutation.isPending}
+              data-testid="button-update-document"
+              onClick={() => window.document.getElementById('file-update-input')?.click()}
+            >
+              {updateDocumentMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="mr-2 h-4 w-4" />
+              )}
+              Update
+            </Button>
+            <input
+              id="file-update-input"
+              type="file"
+              onChange={handleFileUpdate}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+              data-testid="input-file-update"
+            />
+          </div>
           
           <Button
             onClick={handleExport}
