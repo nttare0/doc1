@@ -111,10 +111,11 @@ export function FolderDocumentList({ folderId }: FolderDocumentListProps) {
         });
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Download error:', error);
       toast({
         title: "Download failed",
-        description: "Unable to download the document",
+        description: "File not available. Please upload a new file using the Update button.",
         variant: "destructive",
       });
     },

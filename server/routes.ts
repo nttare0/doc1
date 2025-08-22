@@ -292,6 +292,8 @@ Generated: ${new Date().toLocaleDateString()}
       const fileExists = await fs.access(document.filePath).then(() => true).catch(() => false);
       
       if (!fileExists) {
+        console.log('File not found on disk:', document.filePath);
+        
         // For template-created documents, generate content dynamically
         if (document.filePath.startsWith('templates/')) {
           const content = await generateDocumentContent(document);
@@ -320,7 +322,17 @@ Generated: ${new Date().toLocaleDateString()}
           
           return res.send(content);
         } else {
-          return res.status(404).json({ message: "File not found on disk" });
+          // File was deleted due to corruption or other issues
+          // Check if this is a missing file placeholder
+          if (document.filePath.includes('missing/file_needs_reupload')) {
+            return res.status(404).json({ 
+              message: "File needs to be re-uploaded. Please use the Update button to upload a new valid file." 
+            });
+          }
+          
+          return res.status(404).json({ 
+            message: "File not available. The document may have been corrupted and removed. Please upload a new file using the Update button." 
+          });
         }
       }
       
