@@ -76,6 +76,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  // Helper functions for document generation
+  function getFileExtension(fileType: string): string {
+    switch (fileType) {
+      case 'word': return '.docx';
+      case 'excel': return '.xlsx';
+      case 'powerpoint': return '.pptx';
+      case 'pdf': return '.pdf';
+      default: return '.txt';
+    }
+  }
+
+  function getContentType(fileType: string): string {
+    switch (fileType) {
+      case 'word': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'excel': return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      case 'powerpoint': return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      case 'pdf': return 'application/pdf';
+      default: return 'text/plain';
+    }
+  }
+
+  async function generateDocumentContent(document: any): Promise<string> {
+    // Generate basic text content for the document
+    const header = `ZEOLF TECHNOLOGY
+Document Management System
+
+${document.name}
+Document Code: ${document.documentCode || 'N/A'}
+Category: ${document.category.replace('_', ' ').toUpperCase()}
+Created: ${document.createdAt.toLocaleDateString()}
+
+`;
+
+    let content = '';
+    if (document.content) {
+      if (document.content.title) {
+        content += `Title: ${document.content.title}\n\n`;
+      }
+      if (document.content.body) {
+        content += `${document.content.body}\n\n`;
+      }
+      if (document.content.cells) {
+        content += 'Excel Data:\n';
+        Object.entries(document.content.cells).forEach(([cell, value]) => {
+          content += `${cell}: ${value}\n`;
+        });
+        content += '\n';
+      }
+      if (document.content.slides) {
+        content += 'PowerPoint Slides:\n';
+        document.content.slides.forEach((slide: any, index: number) => {
+          content += `Slide ${index + 1}: ${slide.title}\n${slide.content}\n\n`;
+        });
+      }
+    }
+
+    const footer = `
+---
+ZEOLF Technology - ${document.category.replace('_', ' ').toUpperCase()}
+Document Code: ${document.documentCode}
+Generated: ${new Date().toLocaleDateString()}
+`;
+
+    return header + content + footer;
+  }
+
   // Document routes
   app.post("/api/documents/upload", requireAuth, upload.single('file'), async (req, res) => {
     try {
@@ -201,7 +267,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Document not found" });
       }
       
-      // Log activity
+      // Check if file exists (for uploaded documents)
+      const fileExists = await fs.access(document.filePath).then(() => true).catch(() => false);
+      
+      if (!fileExists) {
+        // For template-created documents, generate content dynamically
+        if (document.filePath.startsWith('templates/')) {
+          const content = await generateDocumentContent(document);
+          
+          // Set appropriate content type and filename
+          const extension = getFileExtension(document.fileType);
+          const filename = `${document.name}${extension}`;
+          
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+          res.setHeader('Content-Type', getContentType(document.fileType));
+          
+          // Log activity
+          await storage.createActivityLog({
+            userId: req.user!.id,
+            action: "download",
+            resourceType: "document",
+            resourceId: document.id,
+            details: { 
+              documentName: document.name,
+              fileSize: content.length,
+              generatedFromTemplate: true,
+            },
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent'),
+          });
+          
+          return res.send(content);
+        } else {
+          return res.status(404).json({ message: "File not found on disk" });
+        }
+      }
+      
+      // Log activity for regular file downloads
       await storage.createActivityLog({
         userId: req.user!.id,
         action: "download",
@@ -217,6 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.download(document.filePath, document.originalName);
     } catch (error: any) {
+      console.error('Download error:', error);
       res.status(500).json({ message: error.message });
     }
   });
@@ -292,31 +395,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Document not found" });
       }
       
-      // For now, if the document is already a PDF, serve it directly
-      // In a real implementation, you might convert other formats to PDF
-      if (document.fileType === 'pdf') {
-        // Log activity
-        await storage.createActivityLog({
-          userId: req.user!.id,
-          action: "download_pdf",
-          resourceType: "document",
-          resourceId: document.id,
-          details: { 
-            documentName: document.name,
-            fileSize: document.fileSize,
-          },
-          ipAddress: req.ip,
-          userAgent: req.get('User-Agent'),
-        });
-        
-        res.download(document.filePath, `${document.name}.pdf`);
-      } else {
-        // For non-PDF files, return an informational response
-        res.status(400).json({ 
-          message: "PDF conversion not available for this file type. Please download the original file instead." 
-        });
-      }
+      // Generate PDF content for any document type
+      const pdfBuffer = await storage.generatePDF(document);
+      const filename = `${document.name}.pdf`;
+      
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/pdf');
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user!.id,
+        action: "download_pdf",
+        resourceType: "document",
+        resourceId: document.id,
+        details: { 
+          documentName: document.name,
+          generatedPdf: true,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.send(pdfBuffer);
     } catch (error: any) {
+      console.error('PDF download error:', error);
       res.status(500).json({ message: error.message });
     }
   });
