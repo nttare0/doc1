@@ -9,6 +9,20 @@ import { insertFolderSchema, insertDocumentSchema, insertDocumentShareSchema, in
 import { grokService } from "./grokService";
 import { z } from "zod";
 
+// MIME type mapping for different file types
+function getMimeType(fileType: string): string {
+  const mimeTypes: Record<string, string> = {
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'ppt': 'application/vnd.ms-powerpoint',
+    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+  };
+  return mimeTypes[fileType] || 'application/octet-stream';
+}
+
 // Configure multer for file uploads
 const uploadDir = path.join(process.cwd(), "uploads");
 
@@ -317,7 +331,15 @@ Generated: ${new Date().toLocaleDateString()}
         userAgent: req.get('User-Agent'),
       });
       
-      res.download(document.filePath, `${document.name}.${document.fileType}`);
+      // Set proper headers for file download
+      const mimeType = getMimeType(document.fileType);
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${document.name}.${document.fileType}"`);
+      
+      console.log('Downloading file:', document.filePath, 'MIME type:', mimeType);
+      
+      // Send the file
+      res.sendFile(path.resolve(document.filePath));
     } catch (error: any) {
       console.error('Download error:', error);
       res.status(500).json({ message: error.message });

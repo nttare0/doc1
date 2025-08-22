@@ -98,7 +98,8 @@ export function FolderDocumentList({ folderId }: FolderDocumentListProps) {
         const url = window.URL.createObjectURL(blob);
         const a = window.document.createElement('a');
         a.href = url;
-        a.download = document.originalName;
+        // Use proper filename with document name and file extension
+        a.download = `${document.name}.${document.fileType}`;
         window.document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
