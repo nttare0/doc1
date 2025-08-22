@@ -98,8 +98,23 @@ export function FolderDocumentList({ folderId }: FolderDocumentListProps) {
         const url = window.URL.createObjectURL(blob);
         const a = window.document.createElement('a');
         a.href = url;
-        // Use proper filename with document name and file extension
-        a.download = `${document.name}.${document.fileType}`;
+        // Use proper Microsoft Office filename format
+        const getOfficeExtension = (fileType: string) => {
+          const extensions: Record<string, string> = {
+            'word': '.docx',
+            'docx': '.docx',
+            'doc': '.docx',
+            'excel': '.xlsx',
+            'xlsx': '.xlsx', 
+            'xls': '.xlsx',
+            'powerpoint': '.pptx',
+            'pptx': '.pptx',
+            'ppt': '.pptx',
+            'pdf': '.pdf'
+          };
+          return extensions[fileType] || '.docx';
+        };
+        a.download = `${document.name}${getOfficeExtension(document.fileType)}`;
         window.document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);

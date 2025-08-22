@@ -347,12 +347,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (document.filePath.startsWith('templates/')) {
           const content = await generateDocumentContent(document);
           
-          // Set appropriate content type and filename for Word document
+          // Set Microsoft Office compatible headers for Word document
           const filename = `${document.name}.docx`;
           
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
           res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-          res.setHeader('Cache-Control', 'no-cache');
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+          res.setHeader('Content-Transfer-Encoding', 'binary');
           
           // Log activity
           await storage.createActivityLog({
@@ -399,16 +402,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('User-Agent'),
       });
       
-      // Set proper headers for file download with correct filename format
+      // Set proper headers for Microsoft Office compatible download
       const mimeType = getMimeType(document.fileType);
       const properExtension = getFileExtension(document.fileType);
       const downloadFilename = `${document.name}${properExtension}`;
       
+      // Ensure Microsoft Office compatibility
       res.setHeader('Content-Type', mimeType);
       res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       
-      console.log('Downloading file:', document.filePath, 'as:', downloadFilename, 'MIME:', mimeType);
+      console.log('Downloading MS Office file:', document.filePath, 'as:', downloadFilename, 'MIME:', mimeType);
       
       // Check if file is valid before sending
       try {
