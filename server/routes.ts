@@ -52,27 +52,18 @@ const upload = multer({
     fileSize: 50 * 1024 * 1024, // 50MB limit
   },
   fileFilter: (req, file, cb) => {
-    console.log('File upload - Name:', file.originalname, 'MIME type:', file.mimetype, 'Size:', file.size);
+    console.log('File upload - Name:', file.originalname, 'MIME type:', file.mimetype);
     
-    const allowedMimes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    ];
-    
-    // Additional check for file extensions
+    // Simplified file extension check - focus on extensions since MIME types can vary
     const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
     const fileExtension = path.extname(file.originalname).toLowerCase();
     
-    if (allowedMimes.includes(file.mimetype) && allowedExtensions.includes(fileExtension)) {
+    if (allowedExtensions.includes(fileExtension)) {
+      console.log('File accepted - Extension:', fileExtension);
       cb(null, true);
     } else {
-      console.error('File rejected - MIME:', file.mimetype, 'Extension:', fileExtension);
-      cb(new Error(`Invalid file type. File: ${file.originalname}, MIME: ${file.mimetype}. Only PDF, Word, Excel, and PowerPoint files are allowed.`));
+      console.error('File rejected - Extension:', fileExtension, 'not in allowed list');
+      cb(new Error(`Invalid file type. Only PDF, Word, Excel, and PowerPoint files are allowed.`));
     }
   }
 });
@@ -354,24 +345,18 @@ Generated: ${new Date().toLocaleDateString()}
       const mimeType = getMimeType(document.fileType);
       res.setHeader('Content-Type', mimeType);
       res.setHeader('Content-Disposition', `attachment; filename="${document.name}.${document.fileType}"`);
+      res.setHeader('Cache-Control', 'no-cache');
       
-      console.log('Downloading file:', document.filePath, 'MIME type:', mimeType);
+      console.log('Downloading file:', document.filePath, 'MIME type:', mimeType, 'Size:', fileStats.size, 'bytes');
       
       // Check if file is valid before sending
       try {
         const fileStats = await fs.stat(document.filePath);
         console.log('File stats:', fileStats.size, 'bytes');
         
-        // For small files or Word documents, check if they might be corrupted
-        if (fileStats.size < 1000) {
-          console.warn('Warning: File size is very small, might be corrupted');
-          
-          // For Word documents, provide specific guidance
-          if (document.fileType === 'docx') {
-            return res.status(400).json({ 
-              message: "This document appears to be corrupted or is not a valid Word file. Please upload a proper .docx file created in Microsoft Word." 
-            });
-          }
+        // Basic file size check
+        if (fileStats.size < 100) {
+          console.warn('Warning: File size is very small:', fileStats.size, 'bytes');
         }
         
         // Send the file
@@ -405,22 +390,18 @@ Generated: ${new Date().toLocaleDateString()}
 
       console.log('Updating document with file:', req.file.originalname, 'Size:', req.file.size);
 
-      // Validate file content for Word documents
-      if (req.file.originalname.toLowerCase().endsWith('.docx')) {
-        try {
-          const fileBuffer = await fs.readFile(req.file.path);
-          const isValidDocx = fileBuffer.length > 1000 && fileBuffer.subarray(0, 4).toString('hex') === '504b0304';
-          if (!isValidDocx) {
-            console.warn('Invalid .docx file detected - not a proper Word document');
-            await fs.unlink(req.file.path); // Clean up invalid file
-            return res.status(400).json({ 
-              message: "Invalid Word document. Please upload a genuine .docx file created in Microsoft Word." 
-            });
-          }
-        } catch (validationError) {
-          console.error('File validation error:', validationError);
-          return res.status(400).json({ message: "File validation failed" });
+      // Basic file validation - just check size and that file exists
+      try {
+        const fileStats = await fs.stat(req.file.path);
+        console.log('File uploaded successfully - Path:', req.file.path, 'Size:', fileStats.size, 'bytes');
+        
+        if (fileStats.size === 0) {
+          await fs.unlink(req.file.path);
+          return res.status(400).json({ message: "Empty file uploaded" });
         }
+      } catch (validationError) {
+        console.error('File validation error:', validationError);
+        return res.status(400).json({ message: "File validation failed" });
       }
 
       const { category, description } = req.body;
