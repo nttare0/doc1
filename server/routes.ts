@@ -317,7 +317,7 @@ Generated: ${new Date().toLocaleDateString()}
         userAgent: req.get('User-Agent'),
       });
       
-      res.download(document.filePath, document.originalName);
+      res.download(document.filePath, `${document.name}.${document.fileType}`);
     } catch (error: any) {
       console.error('Download error:', error);
       res.status(500).json({ message: error.message });
@@ -354,8 +354,8 @@ Generated: ${new Date().toLocaleDateString()}
 
       // Update document with new file, keeping the same name and document properties
       const updatedDocument = await storage.updateDocument(documentId, {
-        // Keep the original document name and properties, only update file-related fields
-        originalName: req.file.originalname,
+        // Keep the original document name - do NOT change it during updates
+        // Only update file-related technical fields, not user-visible properties
         filePath: req.file.path,
         fileSize: req.file.size,
         fileType: path.extname(req.file.originalname).toLowerCase().substring(1),
