@@ -117,62 +117,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   async function generateDocumentContent(document: any): Promise<Buffer> {
-    // Create proper Word document
+    // Create Word document following ZEOLF format standards
+    const categoryMap: Record<string, string> = {
+      'press_releases': 'PRESS RELEASE',
+      'memos': 'MEMO',
+      'external_letters': 'EXTERNAL LETTER', 
+      'contracts': 'CONTRACT',
+      'followups': 'FOLLOW-UP'
+    };
+    
+    const categoryTitle = categoryMap[document.category] || 'MEMO';
+    const documentDate = new Date(document.createdAt).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric'
+    });
+
     const doc = new DocxDocument({
       sections: [{
         properties: {},
         children: [
-          // Header
+          // Category header (e.g., "PRESS RELEASE")
           new Paragraph({
-            text: "ZEOLF TECHNOLOGY",
+            text: categoryTitle,
             heading: HeadingLevel.HEADING_1,
-            spacing: { after: 200 }
+            spacing: { after: 400 },
+            alignment: 'center'
           }),
+          
+          // Document number and date line
           new Paragraph({
-            text: "Document Management System",
+            children: [
+              new TextRun({ text: `Document No: ${document.documentCode || 'N/A'}`, bold: true }),
+              new TextRun({ text: `Date: ${documentDate}`, bold: true })
+            ],
+            spacing: { after: 600 },
+            tabStops: [{ type: 'right', position: 9000 }]
+          }),
+          
+          // Document title/name
+          new Paragraph({
+            text: document.name || "Untitled Document",
             heading: HeadingLevel.HEADING_2,
             spacing: { after: 400 }
           }),
           
-          // Document info
-          new Paragraph({
-            children: [
-              new TextRun({ text: "Document: ", bold: true }),
-              new TextRun(document.name || "Untitled")
-            ],
-            spacing: { after: 200 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: "Document Code: ", bold: true }),
-              new TextRun(document.documentCode || 'N/A')
-            ],
-            spacing: { after: 200 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: "Category: ", bold: true }),
-              new TextRun((document.category || 'memo').replace('_', ' ').toUpperCase())
-            ],
-            spacing: { after: 200 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: "Created: ", bold: true }),
-              new TextRun(new Date(document.createdAt).toLocaleDateString())
-            ],
-            spacing: { after: 400 }
-          }),
-          
-          // Content
+          // Document content
           ...(document.content ? [
-            ...(document.content.title ? [
+            ...(document.content.title && document.content.title !== document.name ? [
               new Paragraph({
-                children: [
-                  new TextRun({ text: "Title: ", bold: true }),
-                  new TextRun(document.content.title)
-                ],
-                spacing: { after: 200 }
+                text: document.content.title,
+                spacing: { after: 300 },
+                alignment: 'center'
               })
             ] : []),
             ...(document.content.body ? [
@@ -180,31 +176,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 text: document.content.body,
                 spacing: { after: 400 }
               })
-            ] : [])
-          ] : []),
-          
-          // Footer
-          new Paragraph({
-            text: "---",
-            spacing: { before: 400, after: 200 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: `ZEOLF Technology - ${(document.category || 'memo').replace('_', ' ').toUpperCase()}`, italics: true })
-            ],
-            spacing: { after: 200 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: `Document Code: ${document.documentCode || 'N/A'}`, italics: true })
-            ],
-            spacing: { after: 200 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: `Generated: ${new Date().toLocaleDateString()}`, italics: true })
-            ]
-          })
+            ] : [
+              // Default content if no body exists
+              new Paragraph({
+                text: "This document was created in the ZEOLF Document Management System.",
+                spacing: { after: 400 }
+              })
+            ])
+          ] : [
+            new Paragraph({
+              text: "This document was created in the ZEOLF Document Management System.",
+              spacing: { after: 400 }
+            })
+          ])
         ]
       }]
     });
