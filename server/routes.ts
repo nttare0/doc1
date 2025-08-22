@@ -94,13 +94,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const extensions: Record<string, string> = {
       'word': '.docx',
       'docx': '.docx',
-      'doc': '.doc',
+      'doc': '.docx', // Convert old format to new
       'excel': '.xlsx', 
       'xlsx': '.xlsx',
-      'xls': '.xls',
+      'xls': '.xlsx', // Convert old format to new
       'powerpoint': '.pptx',
       'pptx': '.pptx',
-      'ppt': '.ppt',
+      'ppt': '.pptx', // Convert old format to new
       'pdf': '.pdf'
     };
     return extensions[fileType] || '.docx';
@@ -221,13 +221,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { category, name: customName, folderId, description } = req.body;
       
-      // Determine file type
+      // Determine file type - always use modern formats
       const getFileType = (mimetype: string) => {
         if (mimetype.includes('pdf')) return 'pdf';
-        if (mimetype.includes('word')) return 'word';
-        if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return 'excel';
-        if (mimetype.includes('powerpoint') || mimetype.includes('presentation')) return 'powerpoint';
-        return 'unknown';
+        if (mimetype.includes('word') || mimetype.includes('document')) return 'docx';
+        if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return 'xlsx';
+        if (mimetype.includes('powerpoint') || mimetype.includes('presentation')) return 'pptx';
+        return 'docx'; // Default to Word format
       };
 
       const fileType = getFileType(req.file.mimetype);
