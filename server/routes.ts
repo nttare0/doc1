@@ -90,13 +90,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper functions for document generation
   function getFileExtension(fileType: string): string {
-    switch (fileType) {
-      case 'word': return '.docx';
-      case 'excel': return '.xlsx';
-      case 'powerpoint': return '.pptx';
-      case 'pdf': return '.pdf';
-      default: return '.txt';
-    }
+    const extensions: Record<string, string> = {
+      'word': '.docx',
+      'docx': '.docx',
+      'doc': '.doc',
+      'excel': '.xlsx', 
+      'xlsx': '.xlsx',
+      'xls': '.xls',
+      'powerpoint': '.pptx',
+      'pptx': '.pptx',
+      'ppt': '.ppt',
+      'pdf': '.pdf'
+    };
+    return extensions[fileType] || '.docx';
   }
 
   function getContentType(fileType: string): string {
@@ -341,13 +347,16 @@ Generated: ${new Date().toLocaleDateString()}
         userAgent: req.get('User-Agent'),
       });
       
-      // Set proper headers for file download
+      // Set proper headers for file download with correct filename format
       const mimeType = getMimeType(document.fileType);
+      const properExtension = getFileExtension(document.fileType);
+      const downloadFilename = `${document.name}${properExtension}`;
+      
       res.setHeader('Content-Type', mimeType);
-      res.setHeader('Content-Disposition', `attachment; filename="${document.name}.${document.fileType}"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
       res.setHeader('Cache-Control', 'no-cache');
       
-      console.log('Downloading file:', document.filePath, 'MIME type:', mimeType, 'Size:', fileStats.size, 'bytes');
+      console.log('Downloading file:', document.filePath, 'as:', downloadFilename, 'MIME:', mimeType);
       
       // Check if file is valid before sending
       try {
@@ -414,12 +423,13 @@ Generated: ${new Date().toLocaleDateString()}
       }
 
       // Update document with new file, keeping the same name and document properties
+      const fileExtension = path.extname(req.file.originalname).toLowerCase().substring(1);
       const updatedDocument = await storage.updateDocument(documentId, {
         // Keep the original document name - do NOT change it during updates
         // Only update file-related technical fields, not user-visible properties
         filePath: req.file.path,
         fileSize: req.file.size,
-        fileType: path.extname(req.file.originalname).toLowerCase().substring(1),
+        fileType: fileExtension,
         updatedAt: new Date(),
         // Reset content since this is a file replacement
         content: null,
