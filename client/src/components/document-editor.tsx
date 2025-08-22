@@ -105,6 +105,7 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
   // Update document file mutation
   const updateDocumentMutation = useMutation({
     mutationFn: async (file: File) => {
+      console.log('Starting file update mutation for:', file.name);
       const formData = new FormData();
       formData.append("file", file);
       formData.append("keepSameId", "true");
@@ -115,15 +116,28 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
         credentials: "include",
       });
       
+      console.log('Update response status:', response.status);
+      
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorText = await response.text();
+        console.error('Update failed:', errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
         throw new Error(errorData.message || "Update failed");
       }
       
-      return await response.json();
+      const result = await response.json();
+      console.log('Update successful:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Update mutation success, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ["/api/documents", documentId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
       setShowUpdateModal(false);
       toast({
         title: "Document updated",
@@ -131,6 +145,7 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
       });
     },
     onError: (error: any) => {
+      console.error('Update mutation error:', error);
       toast({
         title: "Update failed", 
         description: error.message || "Could not update document file",
@@ -172,7 +187,10 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
   const handleFileUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('Updating document with file:', file.name, file.size);
       updateDocumentMutation.mutate(file);
+      // Reset the input so the same file can be selected again if needed
+      event.target.value = '';
     }
   };
 
@@ -386,7 +404,16 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
               className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
               disabled={updateDocumentMutation.isPending}
               data-testid="button-update-document"
-              onClick={() => window.document.getElementById('file-update-input')?.click()}
+              onClick={() => {
+                console.log('Update button clicked');
+                const fileInput = window.document.getElementById('file-update-input') as HTMLInputElement;
+                if (fileInput) {
+                  console.log('File input found, triggering click');
+                  fileInput.click();
+                } else {
+                  console.error('File input not found');
+                }
+              }}
             >
               {updateDocumentMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -399,7 +426,7 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
               id="file-update-input"
               type="file"
               onChange={handleFileUpdate}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="hidden"
               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
               data-testid="input-file-update"
             />
