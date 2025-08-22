@@ -8,6 +8,7 @@ import fs from "fs/promises";
 import { insertFolderSchema, insertDocumentSchema, insertDocumentShareSchema, insertActivityLogSchema } from "@shared/schema";
 import { grokService } from "./grokService";
 import { z } from "zod";
+import { Document as DocxDocument, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 
 // MIME type mapping for different file types
 function getMimeType(fileType: string): string {
@@ -115,49 +116,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
-  async function generateDocumentContent(document: any): Promise<string> {
-    // Generate basic text content for the document
-    const header = `ZEOLF TECHNOLOGY
-Document Management System
+  async function generateDocumentContent(document: any): Promise<Buffer> {
+    // Create proper Word document
+    const doc = new DocxDocument({
+      sections: [{
+        properties: {},
+        children: [
+          // Header
+          new Paragraph({
+            text: "ZEOLF TECHNOLOGY",
+            heading: HeadingLevel.HEADING_1,
+            spacing: { after: 200 }
+          }),
+          new Paragraph({
+            text: "Document Management System",
+            heading: HeadingLevel.HEADING_2,
+            spacing: { after: 400 }
+          }),
+          
+          // Document info
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Document: ", bold: true }),
+              new TextRun(document.name || "Untitled")
+            ],
+            spacing: { after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Document Code: ", bold: true }),
+              new TextRun(document.documentCode || 'N/A')
+            ],
+            spacing: { after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Category: ", bold: true }),
+              new TextRun((document.category || 'memo').replace('_', ' ').toUpperCase())
+            ],
+            spacing: { after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Created: ", bold: true }),
+              new TextRun(new Date(document.createdAt).toLocaleDateString())
+            ],
+            spacing: { after: 400 }
+          }),
+          
+          // Content
+          ...(document.content ? [
+            ...(document.content.title ? [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: "Title: ", bold: true }),
+                  new TextRun(document.content.title)
+                ],
+                spacing: { after: 200 }
+              })
+            ] : []),
+            ...(document.content.body ? [
+              new Paragraph({
+                text: document.content.body,
+                spacing: { after: 400 }
+              })
+            ] : [])
+          ] : []),
+          
+          // Footer
+          new Paragraph({
+            text: "---",
+            spacing: { before: 400, after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: `ZEOLF Technology - ${(document.category || 'memo').replace('_', ' ').toUpperCase()}`, italics: true })
+            ],
+            spacing: { after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: `Document Code: ${document.documentCode || 'N/A'}`, italics: true })
+            ],
+            spacing: { after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: `Generated: ${new Date().toLocaleDateString()}`, italics: true })
+            ]
+          })
+        ]
+      }]
+    });
 
-${document.name}
-Document Code: ${document.documentCode || 'N/A'}
-Category: ${document.category.replace('_', ' ').toUpperCase()}
-Created: ${document.createdAt.toLocaleDateString()}
-
-`;
-
-    let content = '';
-    if (document.content) {
-      if (document.content.title) {
-        content += `Title: ${document.content.title}\n\n`;
-      }
-      if (document.content.body) {
-        content += `${document.content.body}\n\n`;
-      }
-      if (document.content.cells) {
-        content += 'Excel Data:\n';
-        Object.entries(document.content.cells).forEach(([cell, value]) => {
-          content += `${cell}: ${value}\n`;
-        });
-        content += '\n';
-      }
-      if (document.content.slides) {
-        content += 'PowerPoint Slides:\n';
-        document.content.slides.forEach((slide: any, index: number) => {
-          content += `Slide ${index + 1}: ${slide.title}\n${slide.content}\n\n`;
-        });
-      }
-    }
-
-    const footer = `
----
-ZEOLF Technology - ${document.category.replace('_', ' ').toUpperCase()}
-Document Code: ${document.documentCode}
-Generated: ${new Date().toLocaleDateString()}
-`;
-
-    return header + content + footer;
+    return await Packer.toBuffer(doc);
   }
 
   // Document routes
@@ -295,12 +347,12 @@ Generated: ${new Date().toLocaleDateString()}
         if (document.filePath.startsWith('templates/')) {
           const content = await generateDocumentContent(document);
           
-          // Set appropriate content type and filename
-          const extension = getFileExtension(document.fileType);
-          const filename = `${document.name}${extension}`;
+          // Set appropriate content type and filename for Word document
+          const filename = `${document.name}.docx`;
           
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-          res.setHeader('Content-Type', getContentType(document.fileType));
+          res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+          res.setHeader('Cache-Control', 'no-cache');
           
           // Log activity
           await storage.createActivityLog({
