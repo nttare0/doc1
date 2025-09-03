@@ -1,0 +1,1021 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZEOLF Document Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'zeolf-blue': '#0078D4',
+                        'zeolf-blue-dark': '#106EBE',
+                        'zeolf-accent': '#00BCF2',
+                        'zeolf-success': '#107C10',
+                        'zeolf-warning': '#FF8C00',
+                        'zeolf-error': '#D13438',
+                        'zeolf-bg': '#FAFAFA',
+                        'zeolf-surface': '#FFFFFF',
+                        'zeolf-text': '#323130',
+                        'zeolf-text-secondary': '#605E5C'
+                    },
+                    fontFamily: {
+                        'segoe': ['Segoe UI', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-zeolf-bg font-segoe text-zeolf-text">
+    <!-- @COMPONENT: App Container -->
+    <div id="app" class="min-h-screen">
+        
+        <!-- @COMPONENT: LoginPage [initial view] -->
+        <div id="loginPage" class="fixed inset-0 bg-gradient-to-br from-zeolf-blue to-zeolf-blue-dark flex items-center justify-center">
+            <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-zeolf-blue rounded-full mb-4">
+                        <i class="fas fa-file-alt text-white text-2xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-semibold text-zeolf-text mb-2">ZEOLF</h1>
+                    <p class="text-zeolf-text-secondary">Document Management System</p>
+                </div>
+                
+                <form class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-zeolf-text mb-2">Login Code</label>
+                        <input type="text" data-bind="loginCode" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zeolf-blue focus:border-transparent outline-none transition-all" placeholder="Enter your login code" data-mock="true">
+                    </div>
+                    
+                    <button type="button" onclick="showDashboard()" class="w-full bg-zeolf-blue hover:bg-zeolf-blue-dark text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200">
+                        Sign In
+                    </button>
+                </form>
+                
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-zeolf-text-secondary">Contact your administrator for access codes</p>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: LoginPage -->
+
+        <!-- @COMPONENT: MainDashboard [hidden initially] -->
+        <div id="dashboard" class="hidden">
+            
+            <!-- @COMPONENT: TopNavigation -->
+            <nav class="bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-zeolf-blue rounded flex items-center justify-center">
+                                <i class="fas fa-file-alt text-white text-sm"></i>
+                            </div>
+                            <h1 class="text-xl font-semibold text-zeolf-text">ZEOLF DMS</h1>
+                        </div>
+                        
+                        <!-- @COMPONENT: Breadcrumb -->
+                        <nav class="flex items-center space-x-2 text-sm">
+                            <span class="text-zeolf-text-secondary">Documents</span>
+                            <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                            <span class="text-zeolf-blue" data-bind="currentFolder">Company Files</span>
+                        </nav>
+                        <!-- @END_COMPONENT: Breadcrumb -->
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <!-- Search -->
+                        <div class="relative">
+                            <input type="text" placeholder="Search documents..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-zeolf-blue focus:border-transparent outline-none w-64">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        
+                        <!-- Video Conference Button -->
+                        <button onclick="showVideoConference()" class="bg-zeolf-accent hover:bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                            <i class="fas fa-video"></i>
+                            <span>New Meeting</span>
+                        </button>
+                        
+                        <!-- User Menu -->
+                        <div class="relative">
+                            <button class="flex items-center space-x-2 text-zeolf-text hover:text-zeolf-blue transition-colors">
+                                <div class="w-8 h-8 bg-zeolf-blue rounded-full flex items-center justify-center">
+                                    <span class="text-white text-sm font-medium" data-bind="user.initials" data-mock="true">JD</span>
+                                </div>
+                                <span data-bind="user.name" data-mock="true">John Doe</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <!-- @END_COMPONENT: TopNavigation -->
+
+            <div class="flex">
+                <!-- @COMPONENT: Sidebar -->
+                <aside class="w-72 bg-white border-r border-gray-200 h-screen sticky top-0">
+                    <div class="p-6">
+                        <!-- Quick Actions -->
+                        <div class="mb-6">
+                            <button onclick="showUploadModal()" class="w-full bg-zeolf-blue hover:bg-zeolf-blue-dark text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors">
+                                <i class="fas fa-plus"></i>
+                                <span>Upload Document</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Navigation Menu -->
+                        <nav class="space-y-2">
+                            <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg bg-zeolf-blue/10 text-zeolf-blue">
+                                <i class="fas fa-folder"></i>
+                                <span>All Documents</span>
+                            </a>
+                            <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-zeolf-text hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-star"></i>
+                                <span>Starred</span>
+                            </a>
+                            <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-zeolf-text hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-clock"></i>
+                                <span>Recent</span>
+                            </a>
+                            <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-zeolf-text hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-share-alt"></i>
+                                <span>Shared with me</span>
+                            </a>
+                        </nav>
+                        
+                        <!-- Document Categories -->
+                        <div class="mt-8">
+                            <h3 class="text-sm font-medium text-zeolf-text-secondary mb-3">Categories</h3>
+                            <nav class="space-y-1">
+                                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-zeolf-text hover:bg-gray-100 transition-colors text-sm">
+                                    <i class="fas fa-newspaper text-zeolf-accent"></i>
+                                    <span>Press Releases</span>
+                                    <span class="ml-auto text-xs text-zeolf-text-secondary" data-bind="categories.pressReleases.count" data-mock="true">12</span>
+                                </a>
+                                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-zeolf-text hover:bg-gray-100 transition-colors text-sm">
+                                    <i class="fas fa-memo text-zeolf-warning"></i>
+                                    <span>Memos</span>
+                                    <span class="ml-auto text-xs text-zeolf-text-secondary" data-bind="categories.memos.count" data-mock="true">8</span>
+                                </a>
+                                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-zeolf-text hover:bg-gray-100 transition-colors text-sm">
+                                    <i class="fas fa-envelope text-zeolf-success"></i>
+                                    <span>Internal Letters</span>
+                                    <span class="ml-auto text-xs text-zeolf-text-secondary" data-bind="categories.letters.count" data-mock="true">15</span>
+                                </a>
+                                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-zeolf-text hover:bg-gray-100 transition-colors text-sm">
+                                    <i class="fas fa-file-contract text-zeolf-error"></i>
+                                    <span>Contracts</span>
+                                    <span class="ml-auto text-xs text-zeolf-text-secondary" data-bind="categories.contracts.count" data-mock="true">6</span>
+                                </a>
+                                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-zeolf-text hover:bg-gray-100 transition-colors text-sm">
+                                    <i class="fas fa-reply text-zeolf-blue"></i>
+                                    <span>Follow-ups</span>
+                                    <span class="ml-auto text-xs text-zeolf-text-secondary" data-bind="categories.followups.count" data-mock="true">3</span>
+                                </a>
+                            </nav>
+                        </div>
+                        
+                        <!-- Admin Section (Super Admin Only) -->
+                        <div class="mt-8" data-role="super-admin">
+                            <h3 class="text-sm font-medium text-zeolf-text-secondary mb-3">Administration</h3>
+                            <nav class="space-y-1">
+                                <a href="#" onclick="showUserManagement()" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-zeolf-text hover:bg-gray-100 transition-colors text-sm">
+                                    <i class="fas fa-users"></i>
+                                    <span>User Management</span>
+                                </a>
+                                <a href="#" onclick="showActivityLogs()" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-zeolf-text hover:bg-gray-100 transition-colors text-sm">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Activity Logs</span>
+                                </a>
+                            </nav>
+                        </div>
+                    </div>
+                </aside>
+                <!-- @END_COMPONENT: Sidebar -->
+
+                <!-- @COMPONENT: MainContent -->
+                <main class="flex-1 p-6">
+                    <div class="max-w-7xl mx-auto">
+                        
+                        <!-- @COMPONENT: DocumentGrid -->
+                        <div id="documentGrid">
+                            <!-- View Controls -->
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="flex items-center space-x-4">
+                                    <h2 class="text-xl font-semibold text-zeolf-text">Company Documents</h2>
+                                    <span class="text-sm text-zeolf-text-secondary" data-bind="documents.count" data-mock="true">44 documents</span>
+                                </div>
+                                
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                                        <button class="px-3 py-1 rounded bg-white shadow-sm text-zeolf-blue">
+                                            <i class="fas fa-th"></i>
+                                        </button>
+                                        <button class="px-3 py-1 rounded text-zeolf-text-secondary hover:text-zeolf-text">
+                                            <i class="fas fa-list"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zeolf-blue focus:border-transparent outline-none">
+                                        <option>Sort by: Modified</option>
+                                        <option>Sort by: Name</option>
+                                        <option>Sort by: Size</option>
+                                        <option>Sort by: Type</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Document Grid -->
+                            <!-- @MAP: documents.map(document => ( -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                
+                                <!-- Document Card 1 -->
+                                <div class="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer group" onclick="showDocumentViewer('Q1_Financial_Report.pdf')">
+                                    <div class="p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-pdf text-red-600"></i>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 text-zeolf-text-secondary hover:text-zeolf-text transition-all">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                        </div>
+                                        <h3 class="font-medium text-zeolf-text mb-1 truncate" data-bind="document.name" data-mock="true">Q1 Financial Report</h3>
+                                        <p class="text-sm text-zeolf-text-secondary mb-2">PDF • 2.4 MB</p>
+                                        <p class="text-xs text-zeolf-text-secondary">Modified 2 hours ago</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Document Card 2 -->
+                                <div class="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer group" onclick="showDocumentViewer('Marketing_Strategy.docx')">
+                                    <div class="p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-word text-blue-600"></i>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 text-zeolf-text-secondary hover:text-zeolf-text transition-all">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                        </div>
+                                        <h3 class="font-medium text-zeolf-text mb-1 truncate" data-bind="document.name" data-mock="true">Marketing Strategy 2024</h3>
+                                        <p class="text-sm text-zeolf-text-secondary mb-2">Word • 1.8 MB</p>
+                                        <p class="text-xs text-zeolf-text-secondary">Modified yesterday</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Document Card 3 -->
+                                <div class="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer group" onclick="showDocumentViewer('Budget_Analysis.xlsx')">
+                                    <div class="p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-excel text-green-600"></i>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 text-zeolf-text-secondary hover:text-zeolf-text transition-all">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                        </div>
+                                        <h3 class="font-medium text-zeolf-text mb-1 truncate" data-bind="document.name" data-mock="true">Budget Analysis</h3>
+                                        <p class="text-sm text-zeolf-text-secondary mb-2">Excel • 945 KB</p>
+                                        <p class="text-xs text-zeolf-text-secondary">Modified 3 days ago</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Document Card 4 -->
+                                <div class="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer group" onclick="showDocumentViewer('Presentation.pptx')">
+                                    <div class="p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-powerpoint text-orange-600"></i>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 text-zeolf-text-secondary hover:text-zeolf-text transition-all">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                        </div>
+                                        <h3 class="font-medium text-zeolf-text mb-1 truncate" data-bind="document.name" data-mock="true">Project Presentation</h3>
+                                        <p class="text-sm text-zeolf-text-secondary mb-2">PowerPoint • 3.2 MB</p>
+                                        <p class="text-xs text-zeolf-text-secondary">Modified 1 week ago</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Document Card 5 -->
+                                <div class="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer group" onclick="showDocumentViewer('Contract_ABC.pdf')">
+                                    <div class="p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-pdf text-red-600"></i>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 text-zeolf-text-secondary hover:text-zeolf-text transition-all">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                        </div>
+                                        <h3 class="font-medium text-zeolf-text mb-1 truncate" data-bind="document.name" data-mock="true">ABC Corp Contract</h3>
+                                        <p class="text-sm text-zeolf-text-secondary mb-2">PDF • 1.1 MB</p>
+                                        <p class="text-xs text-zeolf-text-secondary">Modified 2 weeks ago</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Document Card 6 -->
+                                <div class="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer group" onclick="showDocumentViewer('Press_Release.docx')">
+                                    <div class="p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <i class="fas fa-file-word text-blue-600"></i>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 text-zeolf-text-secondary hover:text-zeolf-text transition-all">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                        </div>
+                                        <h3 class="font-medium text-zeolf-text mb-1 truncate" data-bind="document.name" data-mock="true">Q4 Press Release</h3>
+                                        <p class="text-sm text-zeolf-text-secondary mb-2">Word • 756 KB</p>
+                                        <p class="text-xs text-zeolf-text-secondary">Modified 1 month ago</p>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                        <!-- @END_COMPONENT: DocumentGrid -->
+                    </div>
+                </main>
+                <!-- @END_COMPONENT: MainContent -->
+            </div>
+        </div>
+        <!-- @END_COMPONENT: MainDashboard -->
+
+        <!-- @COMPONENT: DocumentViewer [modal overlay] -->
+        <div id="documentViewer" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+            <div class="absolute inset-4 bg-white rounded-lg shadow-2xl flex flex-col">
+                <!-- Document Viewer Header -->
+                <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                    <div class="flex items-center space-x-4">
+                        <button onclick="closeDocumentViewer()" class="text-zeolf-text-secondary hover:text-zeolf-text">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-red-100 rounded flex items-center justify-center">
+                                <i class="fas fa-file-pdf text-red-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-zeolf-text" data-bind="currentDocument.name" data-mock="true">Q1 Financial Report.pdf</h3>
+                                <p class="text-sm text-zeolf-text-secondary">2.4 MB • Last modified 2 hours ago</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <button class="px-3 py-2 text-zeolf-text-secondary hover:text-zeolf-text rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-download mr-2"></i>Download
+                        </button>
+                        <button class="px-3 py-2 text-zeolf-text-secondary hover:text-zeolf-text rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-share mr-2"></i>Share
+                        </button>
+                        <button onclick="showDocumentEditor()" class="px-4 py-2 bg-zeolf-blue text-white rounded-lg hover:bg-zeolf-blue-dark transition-colors">
+                            <i class="fas fa-edit mr-2"></i>Edit
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Document Content Area -->
+                <div class="flex-1 p-6 overflow-auto bg-gray-50">
+                    <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
+                        <!-- ZEOLF Company Header (Permanent) -->
+                        <div class="border-b-2 border-zeolf-blue pb-4 mb-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h1 class="text-2xl font-bold text-zeolf-blue">ZEOLF TECHNOLOGY</h1>
+                                    <p class="text-sm text-zeolf-text-secondary">Document Management Solutions</p>
+                                </div>
+                                <div class="text-right text-sm text-zeolf-text-secondary">
+                                    <p data-bind="document.createdDate" data-mock="true">Created: March 15, 2024</p>
+                                    <p data-bind="document.docNumber" data-mock="true">Doc #: ZT-FIN-2024-001</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Document Content -->
+                        <div class="prose max-w-none" data-mock="true">
+                            <h2 class="text-xl font-semibold text-zeolf-text mb-4">Q1 2024 Financial Report</h2>
+                            
+                            <p class="text-zeolf-text mb-4">
+                                This quarterly financial report provides a comprehensive overview of ZEOLF Technology's 
+                                financial performance for the first quarter of 2024. The document includes revenue analysis, 
+                                expense breakdowns, and strategic insights for stakeholders.
+                            </p>
+                            
+                            <h3 class="text-lg font-medium text-zeolf-text mb-3">Executive Summary</h3>
+                            
+                            <p class="text-zeolf-text mb-4">
+                                Q1 2024 demonstrated strong growth across all key metrics. Revenue increased by 15% 
+                                compared to Q1 2023, driven primarily by our document management solutions and 
+                                enterprise software offerings.
+                            </p>
+                            
+                            <div class="bg-zeolf-bg p-4 rounded-lg mb-4">
+                                <h4 class="font-medium text-zeolf-text mb-2">Key Metrics</h4>
+                                <ul class="text-zeolf-text space-y-1">
+                                    <li>• Total Revenue: $2.4M (15% YoY growth)</li>
+                                    <li>• Net Profit: $580K (12% margin)</li>
+                                    <li>• Customer Acquisition: 145 new clients</li>
+                                    <li>• Employee Count: 87 (10% growth)</li>
+                                </ul>
+                            </div>
+                            
+                            <p class="text-sm text-zeolf-text-secondary mt-8">
+                                This document is confidential and proprietary to ZEOLF Technology. 
+                                Distribution is restricted to authorized personnel only.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: DocumentViewer -->
+
+        <!-- @COMPONENT: DocumentEditor [modal overlay] -->
+        <div id="documentEditor" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+            <div class="absolute inset-4 bg-white rounded-lg shadow-2xl flex flex-col">
+                <!-- Editor Header -->
+                <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                    <div class="flex items-center space-x-4">
+                        <button onclick="closeDocumentEditor()" class="text-zeolf-text-secondary hover:text-zeolf-text">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                        <h3 class="font-medium text-zeolf-text" data-bind="currentDocument.name" data-mock="true">Editing: Q1 Financial Report.pdf</h3>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <button class="px-3 py-2 text-zeolf-text-secondary hover:text-zeolf-text rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-undo mr-2"></i>Undo
+                        </button>
+                        <button class="px-3 py-2 text-zeolf-text-secondary hover:text-zeolf-text rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-redo mr-2"></i>Redo
+                        </button>
+                        <button class="px-4 py-2 bg-zeolf-success text-white rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-save mr-2"></i>Save
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Editor Toolbar -->
+                <div class="border-b border-gray-200 p-3 bg-gray-50">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <select class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                <option>Arial</option>
+                                <option>Times New Roman</option>
+                                <option>Calibri</option>
+                            </select>
+                            <select class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                <option>12pt</option>
+                                <option>14pt</option>
+                                <option>16pt</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex items-center space-x-1">
+                            <button class="p-2 hover:bg-gray-200 rounded">
+                                <i class="fas fa-bold"></i>
+                            </button>
+                            <button class="p-2 hover:bg-gray-200 rounded">
+                                <i class="fas fa-italic"></i>
+                            </button>
+                            <button class="p-2 hover:bg-gray-200 rounded">
+                                <i class="fas fa-underline"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center space-x-1">
+                            <button class="p-2 hover:bg-gray-200 rounded">
+                                <i class="fas fa-align-left"></i>
+                            </button>
+                            <button class="p-2 hover:bg-gray-200 rounded">
+                                <i class="fas fa-align-center"></i>
+                            </button>
+                            <button class="p-2 hover:bg-gray-200 rounded">
+                                <i class="fas fa-align-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Editor Content -->
+                <div class="flex-1 p-6 overflow-auto bg-gray-50">
+                    <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
+                        <!-- ZEOLF Header (Always visible in editor) -->
+                        <div class="border-b-2 border-zeolf-blue pb-4 mb-6 bg-blue-50 p-4 rounded">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h1 class="text-2xl font-bold text-zeolf-blue">ZEOLF TECHNOLOGY</h1>
+                                    <p class="text-sm text-zeolf-text-secondary">Document Management Solutions</p>
+                                </div>
+                                <div class="text-right text-sm text-zeolf-text-secondary">
+                                    <p>Auto-generated header</p>
+                                    <p class="text-xs">This header is permanent</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Editable Content Area -->
+                        <div contenteditable="true" class="prose max-w-none min-h-96 focus:outline-none" data-implementation="Rich text editor with collaborative features">
+                            <h2 class="text-xl font-semibold text-zeolf-text mb-4">Q1 2024 Financial Report</h2>
+                            
+                            <p class="text-zeolf-text mb-4">
+                                This quarterly financial report provides a comprehensive overview of ZEOLF Technology's 
+                                financial performance for the first quarter of 2024. The document includes revenue analysis, 
+                                expense breakdowns, and strategic insights for stakeholders.
+                            </p>
+                            
+                            <h3 class="text-lg font-medium text-zeolf-text mb-3">Executive Summary</h3>
+                            
+                            <p class="text-zeolf-text mb-4">
+                                Q1 2024 demonstrated strong growth across all key metrics. Revenue increased by 15% 
+                                compared to Q1 2023, driven primarily by our document management solutions and 
+                                enterprise software offerings.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: DocumentEditor -->
+
+        <!-- @COMPONENT: VideoConference [modal overlay] -->
+        <div id="videoConference" class="hidden fixed inset-0 bg-black bg-opacity-95 z-50">
+            <div class="absolute inset-0 flex flex-col">
+                <!-- Video Conference Header -->
+                <div class="flex items-center justify-between p-4 bg-black bg-opacity-50 text-white">
+                    <div class="flex items-center space-x-4">
+                        <h3 class="font-medium">ZEOLF Team Meeting</h3>
+                        <span class="text-sm text-gray-300" data-bind="meeting.duration" data-mock="true">00:12:34</span>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                            <span class="text-sm">Recording</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <button class="text-white hover:text-gray-300">
+                            <i class="fas fa-users mr-2"></i>
+                            <span data-bind="meeting.participants" data-mock="true">4 participants</span>
+                        </button>
+                        <button onclick="closeVideoConference()" class="text-white hover:text-gray-300">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Video Grid -->
+                <div class="flex-1 p-4">
+                    <div class="grid grid-cols-2 lg:grid-cols-2 gap-4 h-full">
+                        <!-- Main Speaker Video -->
+                        <div class="relative bg-gray-900 rounded-lg overflow-hidden">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center text-white">
+                                    <div class="w-20 h-20 bg-zeolf-blue rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <span class="text-2xl font-medium" data-mock="true">JD</span>
+                                    </div>
+                                    <p class="font-medium" data-bind="participant.name" data-mock="true">John Doe</p>
+                                    <p class="text-sm text-gray-300">Host</p>
+                                </div>
+                            </div>
+                            <div class="absolute bottom-4 left-4 flex items-center space-x-2">
+                                <i class="fas fa-microphone text-white"></i>
+                                <i class="fas fa-video text-white"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Participant 2 -->
+                        <div class="relative bg-gray-900 rounded-lg overflow-hidden">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center text-white">
+                                    <div class="w-16 h-16 bg-zeolf-accent rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <span class="text-lg font-medium" data-mock="true">SM</span>
+                                    </div>
+                                    <p class="font-medium" data-bind="participant.name" data-mock="true">Sarah Miller</p>
+                                </div>
+                            </div>
+                            <div class="absolute bottom-4 left-4 flex items-center space-x-2">
+                                <i class="fas fa-microphone text-white"></i>
+                                <i class="fas fa-video-slash text-red-500"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Participant 3 -->
+                        <div class="relative bg-gray-900 rounded-lg overflow-hidden">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center text-white">
+                                    <div class="w-16 h-16 bg-zeolf-success rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <span class="text-lg font-medium" data-mock="true">RJ</span>
+                                    </div>
+                                    <p class="font-medium" data-bind="participant.name" data-mock="true">Robert Johnson</p>
+                                </div>
+                            </div>
+                            <div class="absolute bottom-4 left-4 flex items-center space-x-2">
+                                <i class="fas fa-microphone-slash text-red-500"></i>
+                                <i class="fas fa-video text-white"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Participant 4 -->
+                        <div class="relative bg-gray-900 rounded-lg overflow-hidden">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center text-white">
+                                    <div class="w-16 h-16 bg-zeolf-warning rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <span class="text-lg font-medium" data-mock="true">LW</span>
+                                    </div>
+                                    <p class="font-medium" data-bind="participant.name" data-mock="true">Lisa Wang</p>
+                                </div>
+                            </div>
+                            <div class="absolute bottom-4 left-4 flex items-center space-x-2">
+                                <i class="fas fa-microphone text-white"></i>
+                                <i class="fas fa-video text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Video Controls -->
+                <div class="bg-black bg-opacity-50 p-4">
+                    <div class="flex items-center justify-center space-x-6">
+                        <button class="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center text-white transition-colors">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button class="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center text-white transition-colors">
+                            <i class="fas fa-video"></i>
+                        </button>
+                        <button class="w-12 h-12 bg-zeolf-blue hover:bg-zeolf-blue-dark rounded-full flex items-center justify-center text-white transition-colors">
+                            <i class="fas fa-desktop"></i>
+                        </button>
+                        <button class="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center text-white transition-colors">
+                            <i class="fas fa-comments"></i>
+                        </button>
+                        <button class="w-12 h-12 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-colors">
+                            <i class="fas fa-phone-slash"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between mt-4 text-white text-sm">
+                        <div class="flex items-center space-x-4">
+                            <span>Meeting ID: 123-456-789</span>
+                            <button class="text-zeolf-accent hover:text-blue-300">Copy Link</button>
+                        </div>
+                        <div class="text-gray-300">
+                            End-to-end encrypted
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: VideoConference -->
+
+        <!-- @COMPONENT: UploadModal -->
+        <div id="uploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg mx-4">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-zeolf-text">Upload Document</h3>
+                        <button onclick="closeUploadModal()" class="text-zeolf-text-secondary hover:text-zeolf-text">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Upload Area -->
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6 hover:border-zeolf-blue transition-colors">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-zeolf-text-secondary mb-4"></i>
+                        <p class="text-zeolf-text mb-2">Drag and drop files here</p>
+                        <p class="text-sm text-zeolf-text-secondary mb-4">or</p>
+                        <button class="bg-zeolf-blue hover:bg-zeolf-blue-dark text-white px-6 py-2 rounded-lg transition-colors">
+                            Browse Files
+                        </button>
+                        <p class="text-xs text-zeolf-text-secondary mt-2">Supports PDF, Word, Excel, PowerPoint</p>
+                    </div>
+                    
+                    <!-- Document Details -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-zeolf-text mb-2">Category</label>
+                            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zeolf-blue focus:border-transparent outline-none">
+                                <option>Select category...</option>
+                                <option>Press Releases</option>
+                                <option>Memos</option>
+                                <option>Internal Letters</option>
+                                <option>Contracts</option>
+                                <option>Follow-ups</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-zeolf-text mb-2">Document Name</label>
+                            <input type="text" placeholder="Auto-generated based on content" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zeolf-blue focus:border-transparent outline-none">
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="autoHeader" checked class="text-zeolf-blue focus:ring-zeolf-blue">
+                            <label for="autoHeader" class="text-sm text-zeolf-text">Add ZEOLF company header automatically</label>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button onclick="closeUploadModal()" class="px-4 py-2 text-zeolf-text-secondary hover:text-zeolf-text transition-colors">Cancel</button>
+                        <button class="px-6 py-2 bg-zeolf-blue hover:bg-zeolf-blue-dark text-white rounded-lg transition-colors">Upload</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: UploadModal -->
+
+        <!-- @COMPONENT: UserManagement [admin view] -->
+        <div id="userManagement" class="hidden fixed inset-0 bg-white z-40">
+            <div class="flex flex-col h-full">
+                <!-- Admin Header -->
+                <div class="bg-white border-b border-gray-200 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <button onclick="showDashboard()" class="text-zeolf-text-secondary hover:text-zeolf-text">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <h1 class="text-xl font-semibold text-zeolf-text">User Management</h1>
+                        </div>
+                        <button onclick="showAddUserModal()" class="bg-zeolf-blue hover:bg-zeolf-blue-dark text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                            <i class="fas fa-plus"></i>
+                            <span>Generate Login Code</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- User Table -->
+                <div class="flex-1 p-6 overflow-auto">
+                    <div class="bg-white rounded-lg border border-gray-200">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-zeolf-text-secondary uppercase tracking-wider">User</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-zeolf-text-secondary uppercase tracking-wider">Login Code</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-zeolf-text-secondary uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-zeolf-text-secondary uppercase tracking-wider">Last Active</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-zeolf-text-secondary uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- @MAP: users.map(user => ( -->
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-zeolf-blue rounded-full flex items-center justify-center">
+                                                <span class="text-white font-medium" data-mock="true">JD</span>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-zeolf-text" data-bind="user.name" data-mock="true">John Doe</div>
+                                                <div class="text-sm text-zeolf-text-secondary" data-bind="user.role" data-mock="true">Super Admin</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="font-mono text-sm text-zeolf-text" data-bind="user.loginCode" data-mock="true">ZT-ADM-001</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Active</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-zeolf-text-secondary" data-bind="user.lastActive" data-mock="true">
+                                        2 minutes ago
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="text-zeolf-blue hover:text-zeolf-blue-dark mr-3">Edit</button>
+                                        <button class="text-zeolf-error hover:text-red-700">Deactivate</button>
+                                    </td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-zeolf-accent rounded-full flex items-center justify-center">
+                                                <span class="text-white font-medium" data-mock="true">SM</span>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-zeolf-text" data-bind="user.name" data-mock="true">Sarah Miller</div>
+                                                <div class="text-sm text-zeolf-text-secondary" data-bind="user.role" data-mock="true">User</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="font-mono text-sm text-zeolf-text" data-bind="user.loginCode" data-mock="true">ZT-USR-002</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Active</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-zeolf-text-secondary" data-bind="user.lastActive" data-mock="true">
+                                        1 hour ago
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="text-zeolf-blue hover:text-zeolf-blue-dark mr-3">Edit</button>
+                                        <button class="text-zeolf-error hover:text-red-700">Deactivate</button>
+                                    </td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-zeolf-success rounded-full flex items-center justify-center">
+                                                <span class="text-white font-medium" data-mock="true">RJ</span>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-zeolf-text" data-bind="user.name" data-mock="true">Robert Johnson</div>
+                                                <div class="text-sm text-zeolf-text-secondary" data-bind="user.role" data-mock="true">User</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="font-mono text-sm text-zeolf-text" data-bind="user.loginCode" data-mock="true">ZT-USR-003</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Inactive</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-zeolf-text-secondary" data-bind="user.lastActive" data-mock="true">
+                                        3 days ago
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="text-zeolf-blue hover:text-zeolf-blue-dark mr-3">Edit</button>
+                                        <button class="text-zeolf-success hover:text-green-700">Activate</button>
+                                    </td>
+                                </tr>
+                                <!-- @END_MAP )) -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: UserManagement -->
+
+        <!-- @COMPONENT: ActivityLogs [admin view] -->
+        <div id="activityLogs" class="hidden fixed inset-0 bg-white z-40">
+            <div class="flex flex-col h-full">
+                <!-- Activity Header -->
+                <div class="bg-white border-b border-gray-200 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <button onclick="showDashboard()" class="text-zeolf-text-secondary hover:text-zeolf-text">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <h1 class="text-xl font-semibold text-zeolf-text">Activity Logs</h1>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zeolf-blue focus:border-transparent outline-none">
+                                <option>All Activities</option>
+                                <option>File Access</option>
+                                <option>Downloads</option>
+                                <option>Uploads</option>
+                                <option>Shares</option>
+                            </select>
+                            <input type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-zeolf-blue focus:border-transparent outline-none">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Activity Timeline -->
+                <div class="flex-1 p-6 overflow-auto">
+                    <div class="space-y-4">
+                        <!-- @MAP: activities.map(activity => ( -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-10 h-10 bg-zeolf-blue rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-download text-white text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="font-medium text-zeolf-text" data-bind="activity.title" data-mock="true">Document Downloaded</h3>
+                                        <span class="text-sm text-zeolf-text-secondary" data-bind="activity.timestamp" data-mock="true">2 minutes ago</span>
+                                    </div>
+                                    <p class="text-zeolf-text-secondary text-sm mb-2" data-bind="activity.description" data-mock="true">
+                                        John Doe downloaded "Q1 Financial Report.pdf"
+                                    </p>
+                                    <div class="flex items-center space-x-4 text-xs text-zeolf-text-secondary">
+                                        <span data-bind="activity.user" data-mock="true">User: JD</span>
+                                        <span data-bind="activity.ip" data-mock="true">IP: 192.168.1.100</span>
+                                        <span data-bind="activity.fileSize" data-mock="true">Size: 2.4 MB</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-10 h-10 bg-zeolf-success rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-upload text-white text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="font-medium text-zeolf-text" data-bind="activity.title" data-mock="true">Document Uploaded</h3>
+                                        <span class="text-sm text-zeolf-text-secondary" data-bind="activity.timestamp" data-mock="true">15 minutes ago</span>
+                                    </div>
+                                    <p class="text-zeolf-text-secondary text-sm mb-2" data-bind="activity.description" data-mock="true">
+                                        Sarah Miller uploaded "Marketing Strategy 2024.docx"
+                                    </p>
+                                    <div class="flex items-center space-x-4 text-xs text-zeolf-text-secondary">
+                                        <span data-bind="activity.user" data-mock="true">User: SM</span>
+                                        <span data-bind="activity.category" data-mock="true">Category: Memos</span>
+                                        <span data-bind="activity.fileSize" data-mock="true">Size: 1.8 MB</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-10 h-10 bg-zeolf-accent rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-share text-white text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="font-medium text-zeolf-text" data-bind="activity.title" data-mock="true">Document Shared</h3>
+                                        <span class="text-sm text-zeolf-text-secondary" data-bind="activity.timestamp" data-mock="true">1 hour ago</span>
+                                    </div>
+                                    <p class="text-zeolf-text-secondary text-sm mb-2" data-bind="activity.description" data-mock="true">
+                                        Robert Johnson shared "Budget Analysis.xlsx" with 3 users
+                                    </p>
+                                    <div class="flex items-center space-x-4 text-xs text-zeolf-text-secondary">
+                                        <span data-bind="activity.user" data-mock="true">User: RJ</span>
+                                        <span data-bind="activity.recipients" data-mock="true">Recipients: JD, SM, LW</span>
+                                        <span data-bind="activity.shareType" data-mock="true">Type: View Only</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: ActivityLogs -->
+    </div>
+    
+    <script>
+        // TODO: Implement proper state management and API integration
+        (function() {
+            // View management functions
+            window.showDashboard = function() {
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                document.getElementById('userManagement').classList.add('hidden');
+                document.getElementById('activityLogs').classList.add('hidden');
+            };
+            
+            window.showDocumentViewer = function(filename) {
+                document.getElementById('documentViewer').classList.remove('hidden');
+                // TODO: Load actual document content based on filename
+            };
+            
+            window.closeDocumentViewer = function() {
+                document.getElementById('documentViewer').classList.add('hidden');
+            };
+            
+            window.showDocumentEditor = function() {
+                document.getElementById('documentViewer').classList.add('hidden');
+                document.getElementById('documentEditor').classList.remove('hidden');
+                // TODO: Initialize rich text editor with collaborative features
+            };
+            
+            window.closeDocumentEditor = function() {
+                document.getElementById('documentEditor').classList.add('hidden');
+                document.getElementById('documentViewer').classList.remove('hidden');
+            };
+            
+            window.showVideoConference = function() {
+                document.getElementById('videoConference').classList.remove('hidden');
+                // TODO: Initialize WebRTC connection and video streams
+            };
+            
+            window.closeVideoConference = function() {
+                document.getElementById('videoConference').classList.add('hidden');
+            };
+            
+            window.showUploadModal = function() {
+                document.getElementById('uploadModal').classList.remove('hidden');
+            };
+            
+            window.closeUploadModal = function() {
+                document.getElementById('uploadModal').classList.add('hidden');
+            };
+            
+            window.showUserManagement = function() {
+                document.getElementById('dashboard').classList.add('hidden');
+                document.getElementById('userManagement').classList.remove('hidden');
+                // TODO: Load user data from API
+            };
+            
+            window.showActivityLogs = function() {
+                document.getElementById('dashboard').classList.add('hidden');
+                document.getElementById('activityLogs').classList.remove('hidden');
+                // TODO: Load activity log data from API
+            };
+            
+            window.showAddUserModal = function() {
+                // TODO: Show modal to generate new login codes
+                alert('Generate new login code functionality will be implemented here');
+            };
+        })();
+    </script>
+</body>
+</html>
