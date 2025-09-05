@@ -64,7 +64,7 @@ export default function ActivityLogs() {
   };
 
   const formatLogDescription = (log: ActivityLog) => {
-    const details = log.details as any;
+    const details = typeof log.details === 'string' ? JSON.parse(log.details) : log.details;
     
     switch (log.action) {
       case 'login':

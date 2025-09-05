@@ -6,8 +6,6 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
 
 declare global {
   namespace Express {
@@ -16,7 +14,26 @@ declare global {
 }
 
 const scryptAsync = promisify(scrypt);
-const PostgresSessionStore = connectPg(session);
+
+// Simple in-memory session store for SQLite
+class MemoryStore extends session.Store {
+  private sessions: Map<string, any> = new Map();
+
+  get(sid: string, callback: (err?: any, session?: any) => void) {
+    const session = this.sessions.get(sid);
+    callback(null, session);
+  }
+
+  set(sid: string, session: any, callback?: (err?: any) => void) {
+    this.sessions.set(sid, session);
+    if (callback) callback();
+  }
+
+  destroy(sid: string, callback?: (err?: any) => void) {
+    this.sessions.delete(sid);
+    if (callback) callback();
+  }
+}
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -40,18 +57,14 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || "zeolf-document-management-secret-key-2024",
     resave: false,
     saveUninitialized: false,
-    store: new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true,
-    }),
+    store: new MemoryStore(),
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Set to false for development
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   };
 
-  app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
@@ -115,7 +128,7 @@ export function setupAuth(app: Express) {
         action: "create_user",
         resourceType: "user",
         resourceId: user.id,
-        details: { newUserName: name, newUserRole: role },
+        details: JSON.stringify({ newUserName: name, newUserRole: role }),
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
       });

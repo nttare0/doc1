@@ -187,8 +187,8 @@ export function DocumentEditor({ documentId }: DocumentEditorProps) {
   const handleFileUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log('=== UPDATE BUTTON DIAGNOSIS ===');
     console.log('File input change event triggered');
-    console.log('Event target:', event.target);
-    console.log('Files array:', event.target.files);
+    console.log('Event target exists:', !!event.target);
+    console.log('Files array length:', event.target.files?.length || 0);
     console.log('Document ID:', documentId);
     
     const file = event.target.files?.[0];

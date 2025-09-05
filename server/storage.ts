@@ -1,6 +1,6 @@
 import { users, folders, documents, documentShares, activityLogs, type User, type InsertUser, type Folder, type InsertFolder, type Document, type InsertDocument, type DocumentShare, type InsertDocumentShare, type ActivityLog, type InsertActivityLog } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, count, like, sql, gt, lt } from "drizzle-orm";
+import { eq, desc, and, or, count, like, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -124,7 +124,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteFolder(id: string): Promise<boolean> {
     const result = await db.delete(folders).where(eq(folders.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
+    return result.changes > 0;
   }
 
   async verifyFolderAccess(folderId: string, securityCode?: string): Promise<boolean> {
@@ -172,43 +172,87 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDocument(insertDocument: InsertDocument & { uploadedBy: string }): Promise<Document> {
+    // Convert objects to JSON strings for SQLite
+    const documentData = {
+      ...insertDocument,
+      metadata: insertDocument.metadata ? JSON.stringify(insertDocument.metadata) : null,
+      content: insertDocument.content ? JSON.stringify(insertDocument.content) : null,
+      recipientInfo: insertDocument.recipientInfo ? JSON.stringify(insertDocument.recipientInfo) : null,
+    };
+
     const [document] = await db
       .insert(documents)
-      .values(insertDocument)
+      .values(documentData)
       .returning();
-    return document;
+    
+    // Parse JSON strings back to objects
+    return {
+      ...document,
+      metadata: document.metadata ? JSON.parse(document.metadata) : null,
+      content: document.content ? JSON.parse(document.content) : null,
+      recipientInfo: document.recipientInfo ? JSON.parse(document.recipientInfo) : null,
+    };
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
     const [document] = await db.select().from(documents).where(eq(documents.id, id));
-    return document || undefined;
+    if (!document) return undefined;
+    
+    // Parse JSON strings back to objects
+    return {
+      ...document,
+      metadata: document.metadata ? JSON.parse(document.metadata) : null,
+      content: document.content ? JSON.parse(document.content) : null,
+      recipientInfo: document.recipientInfo ? JSON.parse(document.recipientInfo) : null,
+    };
   }
 
   async getUserDocuments(userId: string): Promise<Document[]> {
-    return await db
+    const docs = await db
       .select()
       .from(documents)
       .where(eq(documents.uploadedBy, userId))
       .orderBy(desc(documents.updatedAt));
+    
+    return docs.map(doc => ({
+      ...doc,
+      metadata: doc.metadata ? JSON.parse(doc.metadata) : null,
+      content: doc.content ? JSON.parse(doc.content) : null,
+      recipientInfo: doc.recipientInfo ? JSON.parse(doc.recipientInfo) : null,
+    }));
   }
 
   async getAllDocuments(): Promise<Document[]> {
-    return await db
+    const docs = await db
       .select()
       .from(documents)
       .orderBy(desc(documents.updatedAt));
+    
+    return docs.map(doc => ({
+      ...doc,
+      metadata: doc.metadata ? JSON.parse(doc.metadata) : null,
+      content: doc.content ? JSON.parse(doc.content) : null,
+      recipientInfo: doc.recipientInfo ? JSON.parse(doc.recipientInfo) : null,
+    }));
   }
 
   async getDocumentsByCategory(category: string): Promise<Document[]> {
-    return await db
+    const docs = await db
       .select()
       .from(documents)
       .where(eq(documents.category, category))
       .orderBy(desc(documents.updatedAt));
+    
+    return docs.map(doc => ({
+      ...doc,
+      metadata: doc.metadata ? JSON.parse(doc.metadata) : null,
+      content: doc.content ? JSON.parse(doc.content) : null,
+      recipientInfo: doc.recipientInfo ? JSON.parse(doc.recipientInfo) : null,
+    }));
   }
 
   async searchDocuments(query: string): Promise<Document[]> {
-    return await db
+    const docs = await db
       .select()
       .from(documents)
       .where(
@@ -218,20 +262,44 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(documents.updatedAt));
+    
+    return docs.map(doc => ({
+      ...doc,
+      metadata: doc.metadata ? JSON.parse(doc.metadata) : null,
+      content: doc.content ? JSON.parse(doc.content) : null,
+      recipientInfo: doc.recipientInfo ? JSON.parse(doc.recipientInfo) : null,
+    }));
   }
 
   async updateDocument(id: string, updates: Partial<Document>): Promise<Document | undefined> {
+    // Convert objects to JSON strings for SQLite
+    const updateData = {
+      ...updates,
+      metadata: updates.metadata ? JSON.stringify(updates.metadata) : undefined,
+      content: updates.content ? JSON.stringify(updates.content) : undefined,
+      recipientInfo: updates.recipientInfo ? JSON.stringify(updates.recipientInfo) : undefined,
+      updatedAt: new Date(),
+    };
+
     const [document] = await db
       .update(documents)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(documents.id, id))
       .returning();
-    return document || undefined;
+    
+    if (!document) return undefined;
+    
+    return {
+      ...document,
+      metadata: document.metadata ? JSON.parse(document.metadata) : null,
+      content: document.content ? JSON.parse(document.content) : null,
+      recipientInfo: document.recipientInfo ? JSON.parse(document.recipientInfo) : null,
+    };
   }
 
   async deleteDocument(id: string): Promise<boolean> {
     const result = await db.delete(documents).where(eq(documents.id, id));
-    return (result.rowCount ?? 0) > 0;
+    return result.changes > 0;
   }
 
   async shareDocument(insertShare: InsertDocumentShare & { sharedBy: string }): Promise<DocumentShare> {
@@ -257,59 +325,106 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documentShares.sharedWith, userId))
       .orderBy(desc(documents.updatedAt));
     
-    return sharedDocs.map(item => item.document);
+    return sharedDocs.map(item => ({
+      ...item.document,
+      metadata: item.document.metadata ? JSON.parse(item.document.metadata) : null,
+      content: item.document.content ? JSON.parse(item.document.content) : null,
+      recipientInfo: item.document.recipientInfo ? JSON.parse(item.document.recipientInfo) : null,
+    }));
   }
 
   async removeDocumentShare(id: string): Promise<boolean> {
     const result = await db.delete(documentShares).where(eq(documentShares.id, id));
-    return (result.rowCount ?? 0) > 0;
+    return result.changes > 0;
   }
 
   async createActivityLog(insertLog: InsertActivityLog & { userId: string }): Promise<ActivityLog> {
+    const logData = {
+      ...insertLog,
+      details: insertLog.details ? JSON.stringify(insertLog.details) : null,
+    };
+
     const [log] = await db
       .insert(activityLogs)
-      .values(insertLog)
+      .values(logData)
       .returning();
-    return log;
+    
+    return {
+      ...log,
+      details: log.details ? JSON.parse(log.details) : null,
+    };
   }
 
   async getActivityLogs(limit: number = 50): Promise<ActivityLog[]> {
-    return await db
+    const logs = await db
       .select()
       .from(activityLogs)
       .orderBy(desc(activityLogs.createdAt))
       .limit(limit);
+    
+    return logs.map(log => ({
+      ...log,
+      details: log.details ? JSON.parse(log.details) : null,
+    }));
   }
 
   async getUserActivityLogs(userId: string, limit: number = 50): Promise<ActivityLog[]> {
-    return await db
+    const logs = await db
       .select()
       .from(activityLogs)
       .where(eq(activityLogs.userId, userId))
       .orderBy(desc(activityLogs.createdAt))
       .limit(limit);
+    
+    return logs.map(log => ({
+      ...log,
+      details: log.details ? JSON.parse(log.details) : null,
+    }));
   }
 
   async getDocumentStats() {
-    const [stats] = await db
+    const stats = await db
       .select({
-        pressReleases: count(eq(documents.category, 'press_releases')),
-        memos: count(eq(documents.category, 'memos')),
-        letters: count(eq(documents.category, 'internal_letters')),
-        contracts: count(eq(documents.category, 'contracts')),
-        followups: count(eq(documents.category, 'follow_ups')),
-        total: count(),
+        category: documents.category,
+        count: count(),
       })
-      .from(documents);
+      .from(documents)
+      .groupBy(documents.category);
     
-    return {
-      pressReleases: Number(stats.pressReleases) || 0,
-      memos: Number(stats.memos) || 0,
-      letters: Number(stats.letters) || 0,
-      contracts: Number(stats.contracts) || 0,
-      followups: Number(stats.followups) || 0,
-      total: Number(stats.total) || 0,
+    const result = {
+      pressReleases: 0,
+      memos: 0,
+      letters: 0,
+      contracts: 0,
+      followups: 0,
+      total: 0,
     };
+
+    stats.forEach(stat => {
+      const categoryCount = Number(stat.count) || 0;
+      result.total += categoryCount;
+      
+      switch (stat.category) {
+        case 'press_releases':
+          result.pressReleases = categoryCount;
+          break;
+        case 'memos':
+          result.memos = categoryCount;
+          break;
+        case 'internal_letters':
+        case 'external_letters':
+          result.letters += categoryCount;
+          break;
+        case 'contracts':
+          result.contracts = categoryCount;
+          break;
+        case 'follow_ups':
+          result.followups = categoryCount;
+          break;
+      }
+    });
+    
+    return result;
   }
 
   async getDocumentCount(documentType: string): Promise<number> {
@@ -321,8 +436,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDocumentCountByTypeAndYear(documentType: string, year: number): Promise<number> {
-    const yearStart = new Date(year, 0, 1);
-    const yearEnd = new Date(year + 1, 0, 1);
+    const yearStart = new Date(year, 0, 1).getTime();
+    const yearEnd = new Date(year + 1, 0, 1).getTime();
     
     const [result] = await db
       .select({ count: count() })
@@ -343,12 +458,20 @@ export class DatabaseStorage implements IStorage {
     const [document] = await db
       .update(documents)
       .set({ 
-        content,
+        content: JSON.stringify(content),
         updatedAt: new Date() 
       })
       .where(eq(documents.id, id))
       .returning();
-    return document || undefined;
+    
+    if (!document) return undefined;
+    
+    return {
+      ...document,
+      metadata: document.metadata ? JSON.parse(document.metadata) : null,
+      content: document.content ? JSON.parse(document.content) : null,
+      recipientInfo: document.recipientInfo ? JSON.parse(document.recipientInfo) : null,
+    };
   }
 
   async generatePDF(document: Document): Promise<Buffer> {
@@ -360,7 +483,7 @@ Document Management System
 ${document.name}
 Document Code: ${document.documentCode || 'N/A'}
 Category: ${document.category.replace('_', ' ').toUpperCase()}
-Created: ${document.createdAt.toLocaleDateString()}
+Created: ${new Date(document.createdAt).toLocaleDateString()}
 
 Content:
 ${JSON.stringify(document.content, null, 2)}

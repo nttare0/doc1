@@ -223,7 +223,7 @@ export function FolderDocumentList({ folderId }: FolderDocumentListProps) {
     console.log('Document ID:', documentId);
     const file = event.target.files?.[0];
     if (file) {
-      console.log('File selected for update:', file.name, 'Size:', file.size);
+      console.log('File selected for update:', file.name, 'Size:', file.size, 'bytes');
       updateDocumentMutation.mutate({ documentId, file });
       // Reset the input so the same file can be selected again if needed
       event.target.value = '';

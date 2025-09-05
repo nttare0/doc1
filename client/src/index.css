@@ -122,6 +122,30 @@
 }
 
 /* ZEOLF Custom Utilities */
+.text-zeolf-text-primary {
+  color: var(--zeolf-text);
+}
+
+.text-zeolf-primary {
+  color: var(--zeolf-blue);
+}
+
+.text-zeolf-primary-dark {
+  color: var(--zeolf-blue-dark);
+}
+
+.bg-zeolf-primary {
+  background-color: var(--zeolf-blue);
+}
+
+.bg-zeolf-primary-dark {
+  background-color: var(--zeolf-blue-dark);
+}
+
+.hover\:bg-zeolf-primary-dark:hover {
+  background-color: var(--zeolf-blue-dark);
+}
+
 .text-zeolf-blue {
   color: var(--zeolf-blue);
 }

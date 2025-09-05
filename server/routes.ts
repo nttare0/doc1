@@ -828,7 +828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ improvedContent });
     } catch (error: any) {
       console.error('AI content improvement error:', error);
-      res.status(500).json({ message: error.message || "Failed to improve content" });
+      res.status(500).json({ message: error.message || "Failed to perform research" });
     }
   });
 

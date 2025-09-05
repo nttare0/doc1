@@ -1,31 +1,31 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   name: text("name").notNull(),
   loginCode: text("login_code").notNull().unique(),
   role: text("role").notNull().default("user"), // "super_admin" or "user"
-  isActive: boolean("is_active").notNull().default(true),
-  lastActive: timestamp("last_active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true),
+  lastActive: integer("last_active", { mode: 'timestamp' }),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
-export const folders = pgTable("folders", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const folders = sqliteTable("folders", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   name: text("name").notNull(),
   description: text("description"),
   securityCode: text("security_code"), // Optional security code for folder access
-  hasSecurityCode: boolean("has_security_code").default(false),
-  createdBy: varchar("created_by").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  hasSecurityCode: integer("has_security_code", { mode: 'boolean' }).default(false),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
-export const documents = pgTable("documents", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const documents = sqliteTable("documents", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   name: text("name").notNull(),
   originalName: text("original_name").notNull(),
   description: text("description"), // Optional description for uploaded files
@@ -33,37 +33,37 @@ export const documents = pgTable("documents", {
   fileType: text("file_type").notNull(), // "pdf", "word", "excel", "powerpoint"
   fileSize: integer("file_size").notNull(),
   filePath: text("file_path").notNull(),
-  folderId: varchar("folder_id").references(() => folders.id), // Documents must belong to a folder
-  uploadedBy: varchar("uploaded_by").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  metadata: jsonb("metadata"), // for additional document properties
+  folderId: text("folder_id").references(() => folders.id), // Documents must belong to a folder
+  uploadedBy: text("uploaded_by").notNull().references(() => users.id),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
+  metadata: text("metadata"), // JSON string for additional document properties
   // New fields for document creation
   documentCode: text("document_code"), // Auto-generated code (e.g., PR-2024-001, MEMO-2024-001)
-  isTemplate: boolean("is_template").default(false),
-  content: jsonb("content"), // Document content for online editing
-  recipientInfo: jsonb("recipient_info"), // For letters: name, address, title
+  isTemplate: integer("is_template", { mode: 'boolean' }).default(false),
+  content: text("content"), // JSON string for document content
+  recipientInfo: text("recipient_info"), // JSON string for letters: name, address, title
 });
 
-export const documentShares = pgTable("document_shares", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  documentId: varchar("document_id").references(() => documents.id).notNull(),
-  sharedBy: varchar("shared_by").references(() => users.id).notNull(),
-  sharedWith: varchar("shared_with").references(() => users.id).notNull(),
+export const documentShares = sqliteTable("document_shares", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  documentId: text("document_id").notNull().references(() => documents.id),
+  sharedBy: text("shared_by").notNull().references(() => users.id),
+  sharedWith: text("shared_with").notNull().references(() => users.id),
   permission: text("permission").notNull().default("view"), // "view" or "edit"
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
-export const activityLogs = pgTable("activity_logs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
+export const activityLogs = sqliteTable("activity_logs", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  userId: text("user_id").notNull().references(() => users.id),
   action: text("action").notNull(), // "upload", "download", "view", "share", "edit"
   resourceType: text("resource_type").notNull(), // "document", "user", "system"
-  resourceId: varchar("resource_id"),
-  details: jsonb("details"), // additional action details
+  resourceId: text("resource_id"),
+  details: text("details"), // JSON string for additional action details
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 // Insert schemas
