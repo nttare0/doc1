@@ -3,15 +3,35 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from "@shared/schema";
 import path from 'path';
 
-const dbPath = process.env.NODE_ENV === 'production' 
-  ? path.join(process.cwd(), 'database.sqlite')
-  : path.join(process.cwd(), 'database.sqlite');
+// Resolve the database file relative to the repository root, NOT process.cwd().
+// Deriving it from cwd means starting the server from any other directory
+// silently creates a second, empty database.sqlite there (and initializeDatabase
+// happily seeds a fresh admin into it), which looks exactly like "the db lost my
+// data". Anchoring to the repo root makes that impossible.
+const repoRoot = path.resolve(import.meta.dirname, "..");
 
+function resolveDbPath(): string {
+  const fromEnv = (process.env.DATABASE_URL ?? "").trim();
+
+  // Legacy/no-op values: the dev script used to pass a Postgres URL that this
+  // SQLite build never connected to. Ignore anything that isn't a local file.
+  if (fromEnv && !/^(postgres|postgresql|mysql):\/\//i.test(fromEnv)) {
+    const fileUrl = fromEnv.replace(/^file:/i, "");
+    return path.isAbsolute(fileUrl) ? fileUrl : path.resolve(repoRoot, fileUrl);
+  }
+
+  return path.join(repoRoot, "database.sqlite");
+}
+
+export const dbPath = resolveDbPath();
 export const sqlite = new Database(dbPath);
 export const db = drizzle(sqlite, { schema });
 
 // Initialize database with tables
 export function initializeDatabase() {
+  // Make the active database file obvious in the server log.
+  console.log(`✓ SQLite database: ${dbPath}`);
+
   // Enable foreign keys
   sqlite.pragma('foreign_keys = ON');
   

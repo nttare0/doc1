@@ -9,8 +9,8 @@ export const users = sqliteTable("users", {
   loginCode: text("login_code").notNull().unique(),
   role: text("role").notNull().default("user"), // "super_admin" or "user"
   isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true),
-  lastActive: integer("last_active", { mode: 'timestamp' }),
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
+  lastActive: integer("last_active", { mode: 'timestamp_ms' }),
+  createdAt: integer("created_at", { mode: 'timestamp_ms' }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 export const folders = sqliteTable("folders", {
@@ -20,8 +20,8 @@ export const folders = sqliteTable("folders", {
   securityCode: text("security_code"), // Optional security code for folder access
   hasSecurityCode: integer("has_security_code", { mode: 'boolean' }).default(false),
   createdBy: text("created_by").notNull().references(() => users.id),
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
-  updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
+  createdAt: integer("created_at", { mode: 'timestamp_ms' }).notNull().default(sql`(unixepoch() * 1000)`),
+  updatedAt: integer("updated_at", { mode: 'timestamp_ms' }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 export const documents = sqliteTable("documents", {
@@ -35,8 +35,8 @@ export const documents = sqliteTable("documents", {
   filePath: text("file_path").notNull(),
   folderId: text("folder_id").references(() => folders.id), // Documents must belong to a folder
   uploadedBy: text("uploaded_by").notNull().references(() => users.id),
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
-  updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
+  createdAt: integer("created_at", { mode: 'timestamp_ms' }).notNull().default(sql`(unixepoch() * 1000)`),
+  updatedAt: integer("updated_at", { mode: 'timestamp_ms' }).notNull().default(sql`(unixepoch() * 1000)`),
   metadata: text("metadata"), // JSON string for additional document properties
   // New fields for document creation
   documentCode: text("document_code"), // Auto-generated code (e.g., PR-2024-001, MEMO-2024-001)
@@ -51,7 +51,7 @@ export const documentShares = sqliteTable("document_shares", {
   sharedBy: text("shared_by").notNull().references(() => users.id),
   sharedWith: text("shared_with").notNull().references(() => users.id),
   permission: text("permission").notNull().default("view"), // "view" or "edit"
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
+  createdAt: integer("created_at", { mode: 'timestamp_ms' }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 export const activityLogs = sqliteTable("activity_logs", {
@@ -63,7 +63,7 @@ export const activityLogs = sqliteTable("activity_logs", {
   details: text("details"), // JSON string for additional action details
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().default(sql`(unixepoch() * 1000)`),
+  createdAt: integer("created_at", { mode: 'timestamp_ms' }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 // Insert schemas

@@ -24,8 +24,10 @@ function getMimeType(fileType: string): string {
   return mimeTypes[fileType] || 'application/octet-stream';
 }
 
-// Configure multer for file uploads
-const uploadDir = path.join(process.cwd(), "uploads");
+// Configure multer for file uploads.
+// Anchored to the repo root (like the database) so the upload directory does not
+// depend on which directory the server happened to be started from.
+const uploadDir = path.resolve(import.meta.dirname, "..", "uploads");
 
 // Ensure upload directory exists
 (async () => {
@@ -281,6 +283,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json(documents);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get document statistics
+  // NOTE: must be registered before "/api/documents/:id" so "stats" is not
+  // captured as a document id by the parameterized route.
+  app.get("/api/documents/stats", requireAuth, async (req, res) => {
+    try {
+      const stats = await storage.getDocumentStats();
+      res.json(stats);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -585,16 +599,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const documents = await storage.getUserSharedDocuments(req.user!.id);
       res.json(documents);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
-
-  // Get document statistics
-  app.get("/api/documents/stats", requireAuth, async (req, res) => {
-    try {
-      const stats = await storage.getDocumentStats();
-      res.json(stats);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
