@@ -156,6 +156,10 @@ export function setupAuth(app: Express) {
         
         // Update last active timestamp
         await storage.updateUserLastActive(user.id);
+        const freshUser = await storage.getUser(user.id);
+        if (freshUser) {
+          user.lastActive = freshUser.lastActive;
+        }
         
         // Log activity
         await storage.createActivityLog({
