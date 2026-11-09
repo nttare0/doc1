@@ -45,7 +45,7 @@ export interface IStorage {
   removeDocumentShare(id: string): Promise<boolean>;
   
   // Activity logging
-  createActivityLog(log: InsertActivityLog & { userId: string }): Promise<ActivityLog>;
+  createActivityLog(log: InsertActivityLog & { userId: string }): Promise<ActivityLog | null>;
   getActivityLogs(limit?: number): Promise<ActivityLog[]>;
   getUserActivityLogs(userId: string, limit?: number): Promise<ActivityLog[]>;
   
@@ -67,7 +67,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByLoginCode(loginCode: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.loginCode, loginCode));
+    const normalized = (loginCode ?? "").trim();
+    if (!normalized) return undefined;
+
+    // Login codes are issued in upper case (e.g. "ZT-ABC-123"), but people type
+    // them by hand, so match case-insensitively instead of locking them out.
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(sql`upper(${users.loginCode}) = upper(${normalized})`);
     return user || undefined;
   }
 
@@ -338,21 +346,41 @@ export class DatabaseStorage implements IStorage {
     return result.changes > 0;
   }
 
-  async createActivityLog(insertLog: InsertActivityLog & { userId: string }): Promise<ActivityLog> {
+  async createActivityLog(insertLog: InsertActivityLog & { userId: string }): Promise<ActivityLog | null> {
     const logData = {
       ...insertLog,
       details: insertLog.details ? JSON.stringify(insertLog.details) : null,
     };
 
-    const [log] = await db
-      .insert(activityLogs)
-      .values(logData)
-      .returning();
-    
-    return {
-      ...log,
-      details: log.details ? JSON.parse(log.details) : null,
-    };
+    try {
+      const [log] = await db
+        .insert(activityLogs)
+        .values(logData)
+        .returning();
+
+      return {
+        ...log,
+        details: log.details ? JSON.parse(log.details) : null,
+      };
+    } catch (error) {
+      // activity_logs.user_id is a foreign key to users(id). A rescue session
+      // authenticates without a users row, so writing its audit entry violates
+      // that constraint. Every route awaits this inside the same try block as
+      // its real work, so letting it throw turns a successful request (say
+      // GET /api/documents) into a 500. Audit logging is a side effect: degrade
+      // loudly instead of breaking the operation it describes.
+      //
+      // Only foreign-key violations are swallowed. Any other failure still
+      // propagates, so genuine database problems stay visible.
+      const message = (error as Error)?.message ?? "";
+      if (/FOREIGN KEY constraint failed/i.test(message)) {
+        console.warn(
+          `[storage] skipped "${insertLog.action}" activity log — no users row for ${insertLog.userId} (rescue session?)`,
+        );
+        return null;
+      }
+      throw error;
+    }
   }
 
   async getActivityLogs(limit: number = 50): Promise<ActivityLog[]> {
